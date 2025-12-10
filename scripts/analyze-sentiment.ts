@@ -77,7 +77,7 @@ async function analyzeSentimentForStock(
 
       successCount++;
     } catch (error) {
-      console.error(`❌ 저장 실패 (${news.title}):`, error instanceof Error ? error.message : String(error));
+      logError(`❌ 저장 실패 (${news.title}):`, error);
       failCount++;
     }
   }
