@@ -208,8 +208,7 @@ async function main() {
 
     console.log("\n✨ 전체 원문 수집 완료!");
   } catch (error) {
-    console.error("❌ 원문 수집 실패:");
-    console.error(error instanceof Error ? error.message : String(error));
+    logError("❌ 원문 수집 실패:", error);
     Deno.exit(1);
   }
 }

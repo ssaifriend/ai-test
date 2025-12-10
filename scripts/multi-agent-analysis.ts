@@ -169,15 +169,14 @@ async function main() {
       try {
         await runMultiAgentAnalysis(supabase, stock.id, stock.code, stock.name);
       } catch (error) {
-        console.error(`종목 분석 실패 (${stock.name}):`, error instanceof Error ? error.message : String(error));
+        logError(`종목 분석 실패 (${stock.name}):`, error);
         // 다음 종목 계속 진행
       }
     }
 
     console.log("✨ 전체 분석 완료!");
   } catch (error) {
-    console.error("❌ Multi-Agent 분석 실패:");
-    console.error(error instanceof Error ? error.message : String(error));
+    logError("❌ Multi-Agent 분석 실패:", error);
     Deno.exit(1);
   }
 }

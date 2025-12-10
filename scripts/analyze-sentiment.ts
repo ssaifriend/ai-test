@@ -114,8 +114,7 @@ async function main() {
 
     console.log("\n✨ 전체 감성 분석 완료!");
   } catch (error) {
-    console.error("❌ 감성 분석 실패:");
-    console.error(error instanceof Error ? error.message : String(error));
+    logError("❌ 감성 분석 실패:", error);
     Deno.exit(1);
   }
 }
