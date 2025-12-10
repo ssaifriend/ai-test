@@ -1,0 +1,40 @@
+name: 뉴스 수집 (Active Hours)
+
+on:
+  schedule:
+    # 한국 시간 기준 08:00-09:00, 15:30-20:00, 매 15분마다 실행
+    # UTC 기준으로는 23:00-00:00, 06:30-11:00 (KST = UTC+9)
+    - cron: "*/15 23 * * 1-5" # 월-금 23:00-00:00 (KST 08:00-09:00)
+    - cron: "*/15 6-10 * * 1-5" # 월-금 06:30-11:00 (KST 15:30-20:00)
+  workflow_dispatch: # 수동 실행 가능
+
+jobs:
+  collect-news:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.40.0
+
+      - name: Collect news
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+        run: |
+          deno task collect-news
+
+      - name: Filter news
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          deno task filter-news
+

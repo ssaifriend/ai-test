@@ -4,10 +4,10 @@
     "test:naver": "deno run --allow-net --allow-env scripts/test-naver.ts",
     "test:supabase": "deno run --allow-net --allow-env scripts/test-supabase.ts",
     "test:all": "deno run --allow-net --allow-env scripts/test-openai.ts && deno run --allow-net --allow-env scripts/test-naver.ts && deno run --allow-net --allow-env scripts/test-supabase.ts",
-    "collect-news": "deno run --allow-net --allow-env --allow-read scripts/collect-news.ts",
-    "filter-news": "deno run --allow-net --allow-env --allow-read scripts/filter-news.ts",
-    "analyze-sentiment": "deno run --allow-net --allow-env --allow-read scripts/analyze-sentiment.ts",
-    "multi-agent-analysis": "deno run --allow-net --allow-env --allow-read scripts/multi-agent-analysis.ts"
+    "collect-news": "deno run --allow-net --allow-env scripts/collect-news.ts",
+    "filter-news": "deno run --allow-net --allow-env scripts/filter-news.ts",
+    "analyze-sentiment": "deno run --allow-net --allow-env scripts/analyze-sentiment.ts",
+    "multi-agent-analysis": "deno run --allow-net --allow-env scripts/multi-agent-analysis.ts"
   },
   "imports": {
     "supabase": "https://esm.sh/@supabase/supabase-js@2",
