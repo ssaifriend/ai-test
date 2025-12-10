@@ -62,4 +62,5 @@ logs/
 *.log
 
 # 내부 문서 (비공개)
-docs
+# docs/DEPLOYMENT.md는 공개 문서이므로 제외
+docs/REQUIREMENTS.internal.md
