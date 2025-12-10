@@ -1,5 +1,9 @@
 {
   "tasks": {
+    "test:openai": "deno run --allow-net --allow-env scripts/test-openai.ts",
+    "test:naver": "deno run --allow-net --allow-env scripts/test-naver.ts",
+    "test:supabase": "deno run --allow-net --allow-env scripts/test-supabase.ts",
+    "test:all": "deno run --allow-net --allow-env scripts/test-openai.ts && deno run --allow-net --allow-env scripts/test-naver.ts && deno run --allow-net --allow-env scripts/test-supabase.ts",
     "collect-news": "deno run --allow-net --allow-env --allow-read scripts/collect-news.ts",
     "filter-news": "deno run --allow-net --allow-env --allow-read scripts/filter-news.ts",
     "analyze-sentiment": "deno run --allow-net --allow-env --allow-read scripts/analyze-sentiment.ts",
