@@ -54,8 +54,27 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
 **Supabase Access Token 및 Project Ref 설정:**
-- Access Token: [Supabase Dashboard > Account Settings > Access Tokens](https://supabase.com/dashboard/account/tokens)에서 생성
-- Project Ref: Supabase 대시보드 프로젝트 설정에서 확인 (URL의 `https://[project-ref].supabase.co` 부분)
+
+1. **SUPABASE_ACCESS_TOKEN** (Supabase CLI 인증용)
+   - **역할**: GitHub Actions에서 Supabase CLI를 사용하여 프로젝트에 접근할 수 있도록 인증하는 토큰
+   - **생성 방법**:
+     1. [Supabase Dashboard](https://supabase.com/dashboard)에 로그인
+     2. 우측 상단 프로필 아이콘 클릭 → **Account Settings**
+     3. 왼쪽 메뉴에서 **Access Tokens** 선택
+     4. **Generate new token** 클릭
+     5. 토큰 이름 입력 (예: "GitHub Actions CI/CD")
+     6. 생성된 토큰을 복사하여 GitHub Secrets에 `SUPABASE_ACCESS_TOKEN`으로 저장
+   - ⚠️ **주의**: 토큰은 한 번만 표시되므로 안전하게 보관하세요
+
+2. **SUPABASE_PROJECT_REF** (프로젝트 식별자)
+   - **역할**: 여러 Supabase 프로젝트 중 어떤 프로젝트에 마이그레이션을 배포할지 식별하는 고유 ID
+   - **확인 방법**:
+     1. Supabase 대시보드에서 해당 프로젝트 선택
+     2. 프로젝트 설정 > **API** 메뉴로 이동
+     3. **Project URL**을 확인: `https://[project-ref].supabase.co`
+     4. 여기서 `[project-ref]` 부분이 프로젝트 참조 ID입니다
+     - 예: URL이 `https://abcdefghijklmnop.supabase.co`라면 `SUPABASE_PROJECT_REF=abcdefghijklmnop`
+   - 또는 프로젝트 설정 > **General** 메뉴에서 **Reference ID** 확인 가능
 
 #### Vercel 배포용 Secrets (선택사항)
 
