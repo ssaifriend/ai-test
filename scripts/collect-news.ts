@@ -80,15 +80,29 @@ async function main() {
 
   try {
     const { supabaseUrl, supabaseServiceKey } = loadEnv();
+    
+    // 환경 변수 검증
+    if (!supabaseUrl || supabaseUrl.trim() === "") {
+      throw new Error("SUPABASE_URL 환경 변수가 비어있습니다. GitHub Secrets를 확인하세요.");
+    }
+    if (!supabaseServiceKey || supabaseServiceKey.trim() === "") {
+      throw new Error("SUPABASE_SERVICE_KEY 환경 변수가 비어있습니다. GitHub Secrets를 확인하세요.");
+    }
+
+    console.log(`🔗 Supabase URL: ${supabaseUrl.substring(0, 30)}...`);
+    console.log(`🔑 Service Key: ${supabaseServiceKey.substring(0, 20)}...\n`);
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // 활성화된 종목 조회
+    console.log("📊 활성화된 종목 조회 중...");
     const { data: stocks, error: stocksError } = await supabase
       .from("stocks")
       .select("id, code, name")
       .eq("is_active", true);
 
     if (stocksError) {
+      logError("❌ 종목 조회 실패:", stocksError);
       throw stocksError;
     }
 
