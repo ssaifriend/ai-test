@@ -1,6 +1,7 @@
 // OpenAI API 연결 테스트 스크립트
 
 import { loadEnv } from "./utils/env.ts";
+import { logError } from "./utils/error-handler.ts";
 
 async function testOpenAI() {
   console.log("🔍 OpenAI API 연결 테스트 시작...\n");
@@ -33,8 +34,7 @@ async function testOpenAI() {
 
     return true;
   } catch (error) {
-    console.error("❌ OpenAI API 연결 실패:");
-    console.error(error instanceof Error ? error.message : String(error));
+    logError("❌ OpenAI API 연결 실패:", error);
     return false;
   }
 }

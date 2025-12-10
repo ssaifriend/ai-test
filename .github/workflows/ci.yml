@@ -94,8 +94,13 @@ jobs:
       - name: Check scripts syntax
         run: |
           deno check scripts/utils/env.ts
+          deno check scripts/utils/error-handler.ts
           deno check scripts/types.ts
           deno check scripts/collect-news.ts
           deno check scripts/filter-news.ts
           deno check scripts/analyze-sentiment.ts
+          deno check scripts/collect-full-content.ts
           deno check scripts/multi-agent-analysis.ts
+          deno check scripts/test-openai.ts
+          deno check scripts/test-naver.ts
+          deno check scripts/test-supabase.ts

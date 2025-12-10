@@ -1,6 +1,7 @@
 // Naver News API 연결 테스트 스크립트
 
 import { loadEnv } from "./utils/env.ts";
+import { logError } from "./utils/error-handler.ts";
 
 async function testNaverAPI() {
   console.log("🔍 Naver News API 연결 테스트 시작...\n");
@@ -37,8 +38,7 @@ async function testNaverAPI() {
 
     return true;
   } catch (error) {
-    console.error("❌ Naver News API 연결 실패:");
-    console.error(error instanceof Error ? error.message : String(error));
+    logError("❌ Naver News API 연결 실패:", error);
     return false;
   }
 }

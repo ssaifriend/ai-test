@@ -2,6 +2,7 @@
 
 import { loadEnv } from "./utils/env.ts";
 import { createClient } from "supabase";
+import { logError } from "./utils/error-handler.ts";
 
 async function testSupabase() {
   console.log("🔍 Supabase 연결 테스트 시작...\n");
@@ -55,8 +56,7 @@ async function testSupabase() {
 
     return true;
   } catch (error) {
-    console.error("❌ Supabase 연결 실패:");
-    console.error(error instanceof Error ? error.message : String(error));
+    logError("❌ Supabase 연결 실패:", error);
     return false;
   }
 }
