@@ -2,7 +2,7 @@
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
-interface FilteringStats {
+export interface FilteringStats {
   id: string;
   stock_id: string;
   collected_at: string;
@@ -17,7 +17,7 @@ interface FilteringStats {
   avg_similarity: number;
 }
 
-interface FilteringStatsPanelProps {
+export interface FilteringStatsPanelProps {
   stats: FilteringStats[];
 }
 

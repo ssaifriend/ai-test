@@ -7,13 +7,17 @@ import type { NewsArticle } from "../types.ts";
  * 언론사 이름에서 신뢰도 tier 추출
  */
 function getSourceTier(sourceName: string): number | null {
-  if (TRUSTED_SOURCES.tier1.includes(sourceName as any)) {
+  const tier1Sources = TRUSTED_SOURCES.tier1 as readonly string[];
+  const tier2Sources = TRUSTED_SOURCES.tier2 as readonly string[];
+  const tier3Sources = TRUSTED_SOURCES.tier3 as readonly string[];
+
+  if (tier1Sources.includes(sourceName)) {
     return 1;
   }
-  if (TRUSTED_SOURCES.tier2.includes(sourceName as any)) {
+  if (tier2Sources.includes(sourceName)) {
     return 2;
   }
-  if (TRUSTED_SOURCES.tier3.includes(sourceName as any)) {
+  if (tier3Sources.includes(sourceName)) {
     return 3;
   }
   return null;
@@ -54,7 +58,8 @@ export function filterBySource(news: NewsArticle[]): {
     }
 
     // 제외 언론사 체크
-    if (EXCLUDED_SOURCES.includes(item.source as any)) {
+    const excludedSources = EXCLUDED_SOURCES as readonly string[];
+    if (excludedSources.includes(item.source)) {
       filtered.push(item);
       stats.filtered++;
       continue;

@@ -79,7 +79,7 @@ export default async function Home() {
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
               필터링 통계
             </h2>
-            <FilteringStatsPanel stats={filteringStats as any} />
+            <FilteringStatsPanel stats={filteringStats as FilteringStats[]} />
           </div>
         </>
       )}
