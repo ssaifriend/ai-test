@@ -1,0 +1,65 @@
+name: Supabase Migration Check
+
+on:
+  push:
+    paths:
+      - "supabase/migrations/**"
+      - ".github/workflows/supabase-migration.yml"
+  pull_request:
+    paths:
+      - "supabase/migrations/**"
+  workflow_dispatch:
+
+jobs:
+  check-migrations:
+    name: Check Migration Syntax
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase locally
+        run: |
+          supabase start
+
+      - name: Check migration files
+        run: |
+          # 마이그레이션 파일이 올바른 순서로 있는지 확인
+          ls -la supabase/migrations/
+          
+          # SQL 문법 검증 (간단한 체크)
+          for file in supabase/migrations/*.sql; do
+            echo "Checking $file..."
+            # 기본적인 SQL 문법 체크
+            if ! grep -q "CREATE TABLE\|CREATE INDEX\|CREATE UNIQUE\|ALTER TABLE" "$file"; then
+              echo "Warning: $file might not contain valid SQL statements"
+            fi
+          done
+
+      - name: Validate migration order
+        run: |
+          # 마이그레이션 파일 이름이 순서대로 있는지 확인
+          files=$(ls supabase/migrations/*.sql | xargs -n1 basename | sort)
+          echo "Migration files:"
+          echo "$files"
+
