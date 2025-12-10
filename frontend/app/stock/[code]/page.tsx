@@ -101,14 +101,14 @@ export default async function StockPage({ params }: PageProps) {
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
                 실시간 추적
               </h2>
-              <RealtimeTrackerTab opinions={opinions} />
+              <RealtimeTrackerTab stockId={stock.id} initialOpinions={opinions} />
             </div>
           </>
         )}
 
         <div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">뉴스 타임라인</h2>
-          <NewsTab news={news} />
+          <NewsTab stockId={stock.id} initialNews={news} />
         </div>
       </div>
     </div>

@@ -1,13 +1,17 @@
 "use client";
 
 import NewsTimelineChart from "../../../components/NewsTimelineChart";
+import { useRealtimeNews } from "../../../hooks/useRealtimeNews";
 import type { NewsArticle } from "../../../lib/types";
 
 interface NewsTabProps {
-  news: NewsArticle[];
+  stockId: string;
+  initialNews: NewsArticle[];
 }
 
-export default function NewsTab({ news }: NewsTabProps) {
+export default function NewsTab({ stockId, initialNews }: NewsTabProps) {
+  const { news, loading } = useRealtimeNews(stockId);
+  const displayNews = news.length > 0 ? news : initialNews;
   const getSentimentColor = (sentiment?: string) => {
     switch (sentiment) {
       case "positive":
@@ -47,7 +51,15 @@ export default function NewsTab({ news }: NewsTabProps) {
     }
   };
 
-  if (news.length === 0) {
+  if (loading) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-500 dark:text-gray-400">로딩 중...</p>
+      </div>
+    );
+  }
+
+  if (displayNews.length === 0) {
     return (
       <div className="text-center py-12">
         <p className="text-gray-500 dark:text-gray-400">뉴스 데이터가 없습니다.</p>
@@ -58,15 +70,15 @@ export default function NewsTab({ news }: NewsTabProps) {
   return (
     <div className="space-y-6">
       {/* 뉴스 감성 트렌드 차트 */}
-      <NewsTimelineChart news={news} />
+      <NewsTimelineChart news={displayNews} />
 
       {/* 뉴스 목록 */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          최근 뉴스 ({news.length}개)
+          최근 뉴스 ({displayNews.length}개)
         </h3>
         <div className="space-y-4">
-          {news.map((article) => (
+          {displayNews.map((article) => (
             <div
               key={article.id}
               className={`border-l-4 rounded p-4 ${getSentimentColor(article.sentiment)}`}

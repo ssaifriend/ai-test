@@ -1,14 +1,29 @@
 "use client";
 
 import OpinionHistoryChart from "../../../components/OpinionHistoryChart";
+import { useRealtimeOpinions } from "../../../hooks/useRealtimeOpinions";
 import type { InvestmentOpinion } from "../../../lib/types";
 
 interface RealtimeTrackerTabProps {
-  opinions: InvestmentOpinion[];
+  stockId: string;
+  initialOpinions: InvestmentOpinion[];
 }
 
-export default function RealtimeTrackerTab({ opinions }: RealtimeTrackerTabProps) {
-  if (opinions.length === 0) {
+export default function RealtimeTrackerTab({
+  stockId,
+  initialOpinions,
+}: RealtimeTrackerTabProps) {
+  const { opinions, loading } = useRealtimeOpinions(stockId);
+  const displayOpinions = opinions.length > 0 ? opinions : initialOpinions;
+  if (loading) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-500 dark:text-gray-400">로딩 중...</p>
+      </div>
+    );
+  }
+
+  if (displayOpinions.length === 0) {
     return (
       <div className="text-center py-12">
         <p className="text-gray-500 dark:text-gray-400">의견 히스토리가 없습니다.</p>
@@ -18,7 +33,7 @@ export default function RealtimeTrackerTab({ opinions }: RealtimeTrackerTabProps
 
   return (
     <div className="space-y-6">
-      <OpinionHistoryChart opinions={opinions} />
+      <OpinionHistoryChart opinions={displayOpinions} />
 
       {/* 최근 의견 목록 */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
@@ -26,7 +41,7 @@ export default function RealtimeTrackerTab({ opinions }: RealtimeTrackerTabProps
           최근 의견 목록
         </h3>
         <div className="space-y-4">
-          {opinions.slice(0, 10).map((opinion) => (
+          {displayOpinions.slice(0, 10).map((opinion) => (
             <div
               key={opinion.id}
               className="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0"
