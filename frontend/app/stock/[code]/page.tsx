@@ -23,14 +23,16 @@ async function getStockData(code: string): Promise<{
     .single();
 
   if (stockError || !stock) {
-    return { stock: null, latestOpinion: null, opinions: [] };
+    return { stock: null, latestOpinion: null, opinions: [], news: [] };
   }
+
+  const stockTyped = stock as Stock;
 
   // 최신 의견 조회
   const { data: latestOpinion } = await supabase
     .from("investment_opinions")
     .select("*")
-    .eq("stock_id", stock.id)
+    .eq("stock_id", stockTyped.id)
     .order("timestamp", { ascending: false })
     .limit(1)
     .single();
@@ -39,7 +41,7 @@ async function getStockData(code: string): Promise<{
   const { data: opinions } = await supabase
     .from("investment_opinions")
     .select("*")
-    .eq("stock_id", stock.id)
+    .eq("stock_id", stockTyped.id)
     .order("timestamp", { ascending: false })
     .limit(30);
 
@@ -47,14 +49,14 @@ async function getStockData(code: string): Promise<{
   const { data: news } = await supabase
     .from("news_articles")
     .select("*")
-    .eq("stock_id", stock.id)
+    .eq("stock_id", stockTyped.id)
     .eq("analyzed", true)
     .order("published_at", { ascending: false })
     .limit(50);
 
   return {
-    stock: stock as Stock,
-    latestOpinion: (latestOpinion as InvestmentOpinion) || null,
+    stock: stockTyped,
+    latestOpinion: (latestOpinion as InvestmentOpinion | null) || null,
     opinions: (opinions as InvestmentOpinion[]) || [],
     news: (news as NewsArticle[]) || [],
   };

@@ -138,15 +138,18 @@ export default function MultiAgentTab({ opinion }: MultiAgentTabProps) {
       <div>
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Agent별 분석 의견</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {agents.map((agent) => (
-            <AgentOpinionCard
-              key={agent.name}
-              agentName={agent.name}
-              recommendation={agent.recommendation!}
-              confidence={agent.confidence!}
-              reasoning={agent.reasoning!}
-            />
-          ))}
+          {agents.map((agent) => {
+            const recommendation = agent.recommendation as "buy" | "sell" | "hold";
+            return (
+              <AgentOpinionCard
+                key={agent.name}
+                agentName={agent.name}
+                recommendation={recommendation}
+                confidence={agent.confidence!}
+                reasoning={agent.reasoning!}
+              />
+            );
+          })}
         </div>
       </div>
     </div>

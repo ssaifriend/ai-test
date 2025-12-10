@@ -2,6 +2,7 @@ import { supabase } from "../lib/supabase";
 import StockCard from "../components/StockCard";
 import FilteringStatsPanel from "../components/FilteringStatsPanel";
 import type { Stock, InvestmentOpinion } from "../lib/types";
+import type { FilteringStats } from "../components/FilteringStatsPanel";
 
 async function getFilteringStats() {
   const { data: stats } = await supabase
@@ -29,7 +30,7 @@ async function getStocksWithLatestOpinions(): Promise<
 
   // 각 종목의 최신 의견 조회
   const stocksWithOpinions = await Promise.all(
-    stocks.map(async (stock) => {
+    (stocks as Stock[]).map(async (stock) => {
       const { data: opinion } = await supabase
         .from("investment_opinions")
         .select("*")
@@ -39,8 +40,8 @@ async function getStocksWithLatestOpinions(): Promise<
         .single();
 
       return {
-        stock: stock as Stock,
-        latestOpinion: opinion as InvestmentOpinion | undefined,
+        stock: stock,
+        latestOpinion: (opinion as InvestmentOpinion | null) || undefined,
       };
     })
   );
@@ -79,7 +80,7 @@ export default async function Home() {
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
               필터링 통계
             </h2>
-            <FilteringStatsPanel stats={filteringStats as unknown as FilteringStats[]} />
+            <FilteringStatsPanel stats={filteringStats as FilteringStats[]} />
           </div>
         </>
       )}
