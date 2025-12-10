@@ -44,12 +44,18 @@ GitHub 저장소 설정 > Secrets and variables > Actions에서 다음 secrets �
 ```
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_KEY=your-service-role-key
+SUPABASE_ACCESS_TOKEN=your-supabase-access-token
+SUPABASE_PROJECT_REF=your-project-ref
 OPENAI_API_KEY=sk-proj-your-openai-api-key
 NAVER_CLIENT_ID=your-naver-client-id
 NAVER_CLIENT_SECRET=your-naver-client-secret
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
+
+**Supabase Access Token 및 Project Ref 설정:**
+- Access Token: [Supabase Dashboard > Account Settings > Access Tokens](https://supabase.com/dashboard/account/tokens)에서 생성
+- Project Ref: Supabase 대시보드 프로젝트 설정에서 확인 (URL의 `https://[project-ref].supabase.co` 부분)
 
 #### Vercel 배포용 Secrets (선택사항)
 
