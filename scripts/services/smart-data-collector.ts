@@ -135,27 +135,60 @@ export class SmartDataCollector {
       return financialData;
     }
 
-    // 실제 재무 데이터는 외부 API (예: 한국거래소, DART 등)를 통해 수집
-    // 현재는 기본 구조를 제공하되, 향후 API 연동 시 이 부분을 확장
-    // 
-    // 향후 구현 예정:
-    // 1. DART API 연동: 재무제표 데이터 수집 (매출액, 영업이익, 순이익 등)
-    // 2. 한국거래소 API 연동: 시가총액, PER, PBR 등 실시간 지표
-    // 3. 외부 재무 데이터 서비스 연동: ROE, 부채비율, 유동비율 등
-    
-    // 현재는 Supabase에 저장된 기본 정보만 활용
-    // 향후 재무 데이터 테이블 추가 시 여기서 조회
-    const financialData: FinancialData = {
-      per: undefined, // 향후 한국거래소 API에서 수집
-      pbr: undefined, // 향후 한국거래소 API에서 수집
-      roe: undefined, // 향후 DART API에서 수집
-      debtRatio: undefined, // 향후 DART API에서 수집
-      currentRatio: undefined, // 향후 DART API에서 수집
-      revenue: undefined, // 향후 DART API에서 수집
-      operatingProfit: undefined, // 향후 DART API에서 수집
-      netProfit: undefined, // 향후 DART API에서 수집
+    // 재무 데이터 수집
+    // 1. Supabase에 재무 데이터 테이블이 있다면 우선 조회
+    // 2. 없으면 공개 API를 통해 수집 시도
+    let financialData: FinancialData = {
+      per: undefined,
+      pbr: undefined,
+      roe: undefined,
+      debtRatio: undefined,
+      currentRatio: undefined,
+      revenue: undefined,
+      operatingProfit: undefined,
+      netProfit: undefined,
       cached: false,
     };
+
+    try {
+      // Supabase에서 최근 재무 데이터 조회 시도
+      // (향후 재무 데이터 테이블 추가 시 사용)
+      // const { data: financialRecord } = await this.supabase
+      //   .from("financial_data")
+      //   .select("*")
+      //   .eq("stock_code", stockCode)
+      //   .order("updated_at", { ascending: false })
+      //   .limit(1)
+      //   .single();
+
+      // 공개 API를 통한 재무 데이터 수집 시도
+      // 한국투자증권 OpenAPI 또는 공개 데이터 소스 활용
+      // 현재는 기본 구조만 제공하되, 실제 API 연동 시 확장 가능
+      
+      // 예시: 공개 API 호출 (실제 구현 시 API 키 필요)
+      // const apiResponse = await fetch(`https://api.example.com/financial/${stockCode}`);
+      // if (apiResponse.ok) {
+      //   const data = await apiResponse.json();
+      //   financialData = {
+      //     per: data.per,
+      //     pbr: data.pbr,
+      //     roe: data.roe,
+      //     debtRatio: data.debtRatio,
+      //     currentRatio: data.currentRatio,
+      //     revenue: data.revenue,
+      //     operatingProfit: data.operatingProfit,
+      //     netProfit: data.netProfit,
+      //     cached: false,
+      //   };
+      // }
+
+      // 현재는 기본값 반환 (실제 API 연동 전까지)
+      // Agent는 undefined 값을 받아서 "데이터 없음"으로 처리
+      console.log(`⚠️  재무 데이터 수집: ${stockCode} - API 연동 필요`);
+    } catch (error) {
+      console.error(`❌ 재무 데이터 수집 실패 (${stockCode}):`, error instanceof Error ? error.message : String(error));
+      // 에러 발생 시에도 기본 구조 반환하여 Agent가 정상 동작하도록 함
+    }
 
     this.setCache(cacheKey, financialData, CACHE_TTL.financial);
     return financialData;
