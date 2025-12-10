@@ -1,0 +1,28 @@
+{
+  "tasks": {
+    "collect-news": "deno run --allow-net --allow-env --allow-read scripts/collect-news.ts",
+    "filter-news": "deno run --allow-net --allow-env --allow-read scripts/filter-news.ts",
+    "analyze-sentiment": "deno run --allow-net --allow-env --allow-read scripts/analyze-sentiment.ts",
+    "multi-agent-analysis": "deno run --allow-net --allow-env --allow-read scripts/multi-agent-analysis.ts"
+  },
+  "imports": {
+    "supabase": "https://esm.sh/@supabase/supabase-js@2",
+    "openai": "https://esm.sh/openai@4",
+    "cheerio": "https://esm.sh/cheerio@1.0.0"
+  },
+  "compilerOptions": {
+    "strict": true,
+    "lib": ["deno.window"]
+  },
+  "fmt": {
+    "useTabs": false,
+    "lineWidth": 100,
+    "indentWidth": 2
+  },
+  "lint": {
+    "rules": {
+      "tags": ["recommended"]
+    }
+  }
+}
+
