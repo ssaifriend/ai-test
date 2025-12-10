@@ -21,6 +21,14 @@ jobs:
         with:
           deno-version: v1.40.0
 
+      - name: Analyze sentiment (if needed)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          deno task analyze-sentiment || true
+
       - name: Run Multi-Agent Analysis
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
