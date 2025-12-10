@@ -80,7 +80,7 @@ async function runFilteringPipeline(
     after_dedup: dedupStats.unique,
     after_quality_filter: qualityStats.passed,
     final_count: finalNews.length,
-    high_importance_count: 0, // 중요도 분류는 나중에
+    high_importance_count: finalNews.filter((n) => n.importance === "high").length,
     filter_rate: Math.round(filterRate * 100) / 100,
     avg_similarity: dedupStats.avgSimilarity,
   });
