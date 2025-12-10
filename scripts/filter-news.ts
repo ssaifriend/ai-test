@@ -12,7 +12,7 @@ import type { NewsArticle } from "./types.ts";
 /**
  * 필터링 파이프라인 실행
  */
-async function runFilteringPipeline(
+export async function runFilteringPipeline(
   supabase: ReturnType<typeof createClient<any, "public">>,
   stockId: string,
   timePeriod: "peak" | "active" | "off"

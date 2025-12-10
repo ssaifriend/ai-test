@@ -8,7 +8,7 @@ import { batchAnalyzeSentiment, type NewsItemForAnalysis } from "./services/sent
 /**
  * 종목별 감성 분석 실행
  */
-async function analyzeSentimentForStock(
+export async function analyzeSentimentForStock(
   supabase: ReturnType<typeof createClient<any, "public">>,
   stockId: string
 ): Promise<void> {

@@ -6,7 +6,7 @@ import { createClient } from "supabase";
 import { logError } from "./utils/error-handler.ts";
 import type { NewsItem, NaverNewsResponse, NewsArticle } from "./types.ts";
 
-async function collectNewsForStock(
+export async function collectNewsForStock(
   supabase: ReturnType<typeof createClient<any, "public">>,
   stockCode: string,
   stockId: string,

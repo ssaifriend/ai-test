@@ -1,4 +1,4 @@
-name: CI
+name: CI/CD
 
 on:
   push:
@@ -71,12 +71,15 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
         run: yarn build
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
         with:
-          name: frontend-build
-          path: frontend/.next
-          retention-days: 1
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ./frontend
+          vercel-args: --prod
+          scope: ${{ secrets.VERCEL_ORG_ID }}
 
   test-scripts:
     name: Test Deno Scripts
