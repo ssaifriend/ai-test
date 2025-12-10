@@ -79,9 +79,24 @@ const CACHE_TTL = {
 export class SmartDataCollector {
   private supabase: ReturnType<typeof createClient>;
   private cache: Map<string, { data: unknown; expiresAt: number }> = new Map();
+  private cacheUsage: Set<string> = new Set(); // 캐시 사용 추적
 
   constructor(supabase: ReturnType<typeof createClient>) {
     this.supabase = supabase;
+  }
+
+  /**
+   * 캐시 사용 여부 확인
+   */
+  hasUsedCache(): boolean {
+    return this.cacheUsage.size > 0;
+  }
+
+  /**
+   * 캐시 사용 추적 초기화
+   */
+  resetCacheUsage(): void {
+    this.cacheUsage.clear();
   }
 
   /**
@@ -92,28 +107,53 @@ export class SmartDataCollector {
     const cached = this.getFromCache<FinancialData>(cacheKey);
 
     if (cached) {
+      this.cacheUsage.add(cacheKey);
       return { ...cached, cached: true, cachedAt: new Date().toISOString() };
     }
 
-    // 실제로는 외부 API 호출 (예: 한국거래소, DART 등)
-    // 현재는 Supabase에서 기본 정보만 조회
+    // Supabase에서 종목 기본 정보 조회
     const { data: stock } = await this.supabase
       .from("stocks")
       .select("*")
       .eq("code", stockCode)
       .single();
 
-    // 실제 재무 데이터는 외부 API (예: 한국거래소, DART 등)를 통해 수집 예정
-    // 현재는 기본 구조만 제공
+    if (!stock) {
+      // 종목이 없으면 기본값 반환
+      const financialData: FinancialData = {
+        per: undefined,
+        pbr: undefined,
+        roe: undefined,
+        debtRatio: undefined,
+        currentRatio: undefined,
+        revenue: undefined,
+        operatingProfit: undefined,
+        netProfit: undefined,
+        cached: false,
+      };
+      this.setCache(cacheKey, financialData, CACHE_TTL.financial);
+      return financialData;
+    }
+
+    // 실제 재무 데이터는 외부 API (예: 한국거래소, DART 등)를 통해 수집
+    // 현재는 기본 구조를 제공하되, 향후 API 연동 시 이 부분을 확장
+    // 
+    // 향후 구현 예정:
+    // 1. DART API 연동: 재무제표 데이터 수집 (매출액, 영업이익, 순이익 등)
+    // 2. 한국거래소 API 연동: 시가총액, PER, PBR 등 실시간 지표
+    // 3. 외부 재무 데이터 서비스 연동: ROE, 부채비율, 유동비율 등
+    
+    // 현재는 Supabase에 저장된 기본 정보만 활용
+    // 향후 재무 데이터 테이블 추가 시 여기서 조회
     const financialData: FinancialData = {
-      per: undefined,
-      pbr: undefined,
-      roe: undefined,
-      debtRatio: undefined,
-      currentRatio: undefined,
-      revenue: undefined,
-      operatingProfit: undefined,
-      netProfit: undefined,
+      per: undefined, // 향후 한국거래소 API에서 수집
+      pbr: undefined, // 향후 한국거래소 API에서 수집
+      roe: undefined, // 향후 DART API에서 수집
+      debtRatio: undefined, // 향후 DART API에서 수집
+      currentRatio: undefined, // 향후 DART API에서 수집
+      revenue: undefined, // 향후 DART API에서 수집
+      operatingProfit: undefined, // 향후 DART API에서 수집
+      netProfit: undefined, // 향후 DART API에서 수집
       cached: false,
     };
 
@@ -129,6 +169,7 @@ export class SmartDataCollector {
     const cached = this.getFromCache<TechnicalData>(cacheKey);
 
     if (cached) {
+      this.cacheUsage.add(cacheKey);
       return { ...cached, cached: true, cachedAt: new Date().toISOString() };
     }
 
@@ -195,6 +236,7 @@ export class SmartDataCollector {
     const cached = this.getFromCache<MacroData>(cacheKey);
 
     if (cached) {
+      this.cacheUsage.add(cacheKey);
       return { ...cached, cached: true, cachedAt: new Date().toISOString() };
     }
 

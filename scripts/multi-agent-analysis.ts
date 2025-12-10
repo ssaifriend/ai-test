@@ -37,6 +37,9 @@ async function runMultiAgentAnalysis(
       runRiskAgent(stockCode, stockName, dataCollector),
     ]);
 
+    // 캐시 사용 여부 확인
+    const usedCache = dataCollector.hasUsedCache();
+
     const opinions: AgentOpinions = {
       fundamental,
       technical,
@@ -123,7 +126,7 @@ async function runMultiAgentAnalysis(
       analysis_type: "full",
       synthesis_model: synthesis.synthesisModel,
       generation_time_ms: generationTime,
-      used_cache: false, // 캐시 사용 여부는 SmartDataCollector에서 추적 예정
+      used_cache: usedCache,
     });
 
     if (insertError) {
