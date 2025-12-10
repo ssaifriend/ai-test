@@ -7,6 +7,7 @@
 
 import { createClient } from "supabase";
 import { loadEnv } from "../utils/env.ts";
+import { logError } from "../utils/error-handler.ts";
 
 export interface FinancialData {
   per?: number;
@@ -183,7 +184,7 @@ export class SmartDataCollector {
         console.log(`ℹ️  재무 데이터 수집: ${stockCode} - DART API 키 설정 필요 (공공데이터포털에서 발급)`);
       }
     } catch (error) {
-      console.error(`❌ 재무 데이터 수집 실패 (${stockCode}):`, error instanceof Error ? error.message : String(error));
+      logError(`❌ 재무 데이터 수집 실패 (${stockCode}):`, error);
       // 에러 발생 시에도 기본 구조 반환하여 Agent가 정상 동작하도록 함
     }
 

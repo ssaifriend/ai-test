@@ -7,6 +7,7 @@
 
 import OpenAI from "openai";
 import { loadEnv } from "../utils/env.ts";
+import { logError } from "../utils/error-handler.ts";
 import { SmartDataCollector, type FinancialData } from "../services/smart-data-collector.ts";
 
 export interface AgentOpinion {

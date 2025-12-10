@@ -7,6 +7,7 @@
 
 import OpenAI from "openai";
 import { loadEnv } from "../utils/env.ts";
+import { logError } from "../utils/error-handler.ts";
 
 export interface SentimentResult {
   sentiment: "positive" | "negative" | "neutral";
