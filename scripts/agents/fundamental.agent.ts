@@ -6,9 +6,9 @@
  */
 
 import OpenAI from "openai";
+import { SmartDataCollector } from "../services/smart-data-collector.ts";
 import { loadEnv } from "../utils/env.ts";
 import { logError } from "../utils/error-handler.ts";
-import { SmartDataCollector, type FinancialData } from "../services/smart-data-collector.ts";
 
 export interface AgentOpinion {
   recommendation: "buy" | "sell" | "hold";
