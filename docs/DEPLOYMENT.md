@@ -102,9 +102,10 @@ Vercel 토큰은 [Vercel Account Settings > Tokens](https://vercel.com/account/t
 3. GitHub 저장소 연결
 4. 프로젝트 설정:
    - Framework Preset: Next.js
-   - Root Directory: `frontend`
-   - Build Command: `yarn build`
-   - Output Directory: `.next`
+   - Root Directory: `frontend` ⚠️ **중요**: 반드시 `frontend`로 설정
+   - Build Command: `yarn build` (또는 자동 감지)
+   - Output Directory: `.next` (기본값, 변경 불필요)
+   - Install Command: `yarn install` (자동 감지)
 5. Environment Variables 추가:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
