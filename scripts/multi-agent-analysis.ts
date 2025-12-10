@@ -17,7 +17,7 @@ import { runSynthesisAgent } from "./agents/synthesis.agent.ts";
  * 종목별 Multi-Agent 분석 실행
  */
 async function runMultiAgentAnalysis(
-  supabase: ReturnType<typeof createClient>,
+  supabase: ReturnType<typeof createClient<any, "public">>,
   stockId: string,
   stockCode: string,
   stockName: string

@@ -9,7 +9,7 @@ import { batchAnalyzeSentiment, type NewsItemForAnalysis } from "./services/sent
  * 종목별 감성 분석 실행
  */
 async function analyzeSentimentForStock(
-  supabase: ReturnType<typeof createClient>,
+  supabase: ReturnType<typeof createClient<any, "public">>,
   stockId: string
 ): Promise<void> {
   // 1. 분석되지 않은 뉴스 조회 (필터링 완료된 것만)

@@ -7,7 +7,7 @@ import { logError } from "./utils/error-handler.ts";
 import type { NewsItem, NaverNewsResponse, NewsArticle } from "./types.ts";
 
 async function collectNewsForStock(
-  supabase: ReturnType<typeof createClient>,
+  supabase: ReturnType<typeof createClient<any, "public">>,
   stockCode: string,
   stockId: string,
   stockName: string,
@@ -58,7 +58,7 @@ async function collectNewsForStock(
         analyzed: false,
       };
 
-      const { error } = await supabase.from("news_articles").insert(newsArticle);
+      const { error } = await supabase.from("news_articles").insert(newsArticle as unknown as Record<string, unknown>);
 
       if (error) {
         logError(`뉴스 저장 실패 (${item.title}):`, error);

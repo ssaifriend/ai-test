@@ -40,7 +40,7 @@ function getCurrentTimePeriod(): "peak" | "active" | "off" {
  * 종목별 원문 수집 및 구조화
  */
 async function collectFullContentForStock(
-  supabase: ReturnType<typeof createClient>,
+  supabase: ReturnType<typeof createClient<any, "public">>,
   stockId: string,
   timePeriod: "peak" | "active" | "off"
 ): Promise<void> {

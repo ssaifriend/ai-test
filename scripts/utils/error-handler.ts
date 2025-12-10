@@ -19,7 +19,7 @@ export function formatError(error: unknown): string {
     for (const key in error) {
       if (key !== "message" && key !== "name" && key !== "stack") {
         try {
-          additionalProps[key] = (error as Record<string, unknown>)[key];
+          additionalProps[key] = (error as unknown as Record<string, unknown>)[key];
         } catch {
           // 순환 참조 등으로 인한 오류 무시
         }

@@ -78,11 +78,11 @@ const CACHE_TTL = {
  * 스마트 데이터 수집기
  */
 export class SmartDataCollector {
-  private supabase: ReturnType<typeof createClient>;
+  private supabase: ReturnType<typeof createClient<any, "public">>;
   private cache: Map<string, { data: unknown; expiresAt: number }> = new Map();
   private cacheUsage: Set<string> = new Set(); // 캐시 사용 추적
 
-  constructor(supabase: ReturnType<typeof createClient>) {
+  constructor(supabase: ReturnType<typeof createClient<any, "public">>) {
     this.supabase = supabase;
   }
 
