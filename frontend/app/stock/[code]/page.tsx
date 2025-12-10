@@ -1,7 +1,8 @@
 import { supabase } from "../../../lib/supabase";
 import MultiAgentTab from "./multi-agent-tab";
 import RealtimeTrackerTab from "./realtime-tracker-tab";
-import type { Stock, InvestmentOpinion } from "../../../lib/types";
+import NewsTab from "./news-tab";
+import type { Stock, InvestmentOpinion, NewsArticle } from "../../../lib/types";
 
 interface PageProps {
   params: Promise<{ code: string }>;
@@ -11,6 +12,7 @@ async function getStockData(code: string): Promise<{
   stock: Stock | null;
   latestOpinion: InvestmentOpinion | null;
   opinions: InvestmentOpinion[];
+  news: NewsArticle[];
 }> {
   // 종목 정보 조회
   const { data: stock, error: stockError } = await supabase
@@ -41,16 +43,26 @@ async function getStockData(code: string): Promise<{
     .order("timestamp", { ascending: false })
     .limit(30);
 
+  // 뉴스 조회 (최근 50개)
+  const { data: news } = await supabase
+    .from("news_articles")
+    .select("*")
+    .eq("stock_id", stock.id)
+    .eq("analyzed", true)
+    .order("published_at", { ascending: false })
+    .limit(50);
+
   return {
     stock: stock as Stock,
     latestOpinion: (latestOpinion as InvestmentOpinion) || null,
     opinions: (opinions as InvestmentOpinion[]) || [],
+    news: (news as NewsArticle[]) || [],
   };
 }
 
 export default async function StockPage({ params }: PageProps) {
   const { code } = await params;
-  const { stock, latestOpinion, opinions } = await getStockData(code);
+  const { stock, latestOpinion, opinions, news } = await getStockData(code);
 
   if (!stock) {
     return (
@@ -75,27 +87,30 @@ export default async function StockPage({ params }: PageProps) {
       </div>
 
       {/* 탭 컨텐츠 */}
-      {latestOpinion ? (
-        <div className="space-y-6">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-              Multi-Agent 분석
-            </h2>
-            <MultiAgentTab opinion={latestOpinion} />
-          </div>
+      <div className="space-y-6">
+        {latestOpinion && (
+          <>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                Multi-Agent 분석
+              </h2>
+              <MultiAgentTab opinion={latestOpinion} />
+            </div>
 
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-              실시간 추적
-            </h2>
-            <RealtimeTrackerTab opinions={opinions} />
-          </div>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                실시간 추적
+              </h2>
+              <RealtimeTrackerTab opinions={opinions} />
+            </div>
+          </>
+        )}
+
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">뉴스 타임라인</h2>
+          <NewsTab news={news} />
         </div>
-      ) : (
-        <div className="text-center py-12">
-          <p className="text-gray-500 dark:text-gray-400">아직 분석 데이터가 없습니다.</p>
-        </div>
-      )}
+      </div>
     </div>
   );
 }
