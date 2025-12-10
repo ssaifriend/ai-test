@@ -21,39 +21,33 @@ jobs:
         with:
           deno-version: v1.40.0
 
-      - name: Verify environment variables
-        run: |
-          if [ -z "${{ secrets.SUPABASE_URL }}" ]; then
-            echo "❌ SUPABASE_URL이 설정되지 않았습니다."
-            exit 1
-          fi
-          if [ -z "${{ secrets.SUPABASE_SERVICE_KEY }}" ]; then
-            echo "❌ SUPABASE_SERVICE_KEY가 설정되지 않았습니다."
-            exit 1
-          fi
-          if [ -z "${{ secrets.NAVER_CLIENT_ID }}" ]; then
-            echo "❌ NAVER_CLIENT_ID가 설정되지 않았습니다."
-            exit 1
-          fi
-          if [ -z "${{ secrets.NAVER_CLIENT_SECRET }}" ]; then
-            echo "❌ NAVER_CLIENT_SECRET이 설정되지 않았습니다."
-            exit 1
-          fi
-          if [ -z "${{ secrets.OPENAI_API_KEY }}" ]; then
-            echo "❌ OPENAI_API_KEY가 설정되지 않았습니다."
-            exit 1
-          fi
-          echo "✅ 모든 환경 변수가 설정되어 있습니다."
-
-      - name: Run news collection pipeline
+      - name: Call collect-news Edge Function
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
-          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          deno task collect-news
-          deno task filter-news
-          deno task collect-full-content || true
+          curl -X POST \
+            "$SUPABASE_URL/functions/v1/collect-news" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            -H "Content-Type: application/json"
+
+      - name: Call filter-news Edge Function
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          curl -X POST \
+            "$SUPABASE_URL/functions/v1/filter-news" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            -H "Content-Type: application/json"
+
+      - name: Call collect-full-content Edge Function
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          curl -X POST \
+            "$SUPABASE_URL/functions/v1/collect-full-content" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            -H "Content-Type: application/json" || true
 

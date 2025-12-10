@@ -21,8 +21,8 @@ export async function collectNewsForStock(
   try {
     const response = await fetch(url, {
       headers: {
-        "X-Naver-Client-Id": naverClientId,
-        "X-Naver-Client-Secret": naverClientSecret,
+        "X-Naver-Client-Id": finalNaverClientId,
+        "X-Naver-Client-Secret": finalNaverClientSecret,
       },
     });
 
