@@ -3,6 +3,7 @@
 
 import { loadEnv } from "./utils/env.ts";
 import { createClient } from "supabase";
+import { logError } from "./utils/error-handler.ts";
 import { classifyImportance } from "./utils/importance-classifier.ts";
 import { crawlNewsContent } from "./services/news-crawler.ts";
 import { structureNewsContent } from "./services/news-structurizer.ts";
@@ -157,7 +158,7 @@ async function collectFullContentForStock(
       // API 호출 간 딜레이 (Rate Limit 방지)
       await new Promise((resolve) => setTimeout(resolve, 2000));
     } catch (error) {
-      console.error(`  ❌ 처리 실패:`, error instanceof Error ? error.message : String(error));
+      logError(`  ❌ 처리 실패:`, error);
       failCount++;
     }
   }

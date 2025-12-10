@@ -3,6 +3,7 @@
 
 import { loadEnv } from "./utils/env.ts";
 import { createClient } from "supabase";
+import { logError } from "./utils/error-handler.ts";
 import type { NewsItem, NaverNewsResponse, NewsArticle } from "./types.ts";
 
 async function collectNewsForStock(
@@ -60,7 +61,7 @@ async function collectNewsForStock(
       const { error } = await supabase.from("news_articles").insert(newsArticle);
 
       if (error) {
-        console.error(`뉴스 저장 실패 (${item.title}):`, error.message);
+        logError(`뉴스 저장 실패 (${item.title}):`, error);
         continue;
       }
 
@@ -69,7 +70,7 @@ async function collectNewsForStock(
 
     return savedCount;
   } catch (error) {
-    console.error(`뉴스 수집 실패 (${stockName}):`, error instanceof Error ? error.message : String(error));
+    logError(`뉴스 수집 실패 (${stockName}):`, error);
     return 0;
   }
 }
@@ -109,8 +110,7 @@ async function main() {
 
     console.log(`\n✨ 전체 수집 완료: ${totalSaved}개 뉴스 저장`);
   } catch (error) {
-    console.error("❌ 뉴스 수집 실패:");
-    console.error(error instanceof Error ? error.message : String(error));
+    logError("❌ 뉴스 수집 실패:", error);
     Deno.exit(1);
   }
 }

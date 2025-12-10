@@ -3,6 +3,7 @@
 
 import { loadEnv } from "./utils/env.ts";
 import { createClient } from "supabase";
+import { logError } from "./utils/error-handler.ts";
 import { SmartDataCollector } from "./services/smart-data-collector.ts";
 import { runFundamentalAgent } from "./agents/fundamental.agent.ts";
 import { runTechnicalAgent } from "./agents/technical.agent.ts";
@@ -135,7 +136,7 @@ async function runMultiAgentAnalysis(
 
     console.log(`✨ 분석 완료 (소요 시간: ${generationTime}ms)\n`);
   } catch (error) {
-    console.error(`❌ 분석 실패 (${stockName}):`, error instanceof Error ? error.message : String(error));
+    logError(`❌ 분석 실패 (${stockName}):`, error);
     throw error;
   }
 }

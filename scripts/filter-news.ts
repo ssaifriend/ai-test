@@ -3,6 +3,7 @@
 
 import { loadEnv } from "./utils/env.ts";
 import { createClient } from "supabase";
+import { logError } from "./utils/error-handler.ts";
 import { filterBySource } from "./utils/source-filter.ts";
 import { removeDuplicates } from "./utils/deduplication.ts";
 import { filterClickbaitAndLowQuality } from "./utils/clickbait-detector.ts";
@@ -158,8 +159,7 @@ async function main() {
 
     console.log("\n✨ 전체 필터링 완료!");
   } catch (error) {
-    console.error("❌ 필터링 실패:");
-    console.error(error instanceof Error ? error.message : String(error));
+    logError("❌ 필터링 실패:", error);
     Deno.exit(1);
   }
 }
