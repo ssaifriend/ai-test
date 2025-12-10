@@ -68,13 +68,24 @@ cd korean-stock-research-agent
 
 2. **환경 변수 설정**
 ```bash
-# 루트 .env 파일 생성
+# 루트 .env 파일 생성 (서버 사이드 스크립트용)
 cp .env.example .env
+# .env 파일을 열어서 실제 값으로 수정하세요
 
-# frontend/.env.local 파일 생성
+# frontend/.env.local 파일 생성 (클라이언트 사이드용)
 cd frontend
-cp ../.env.example .env.local
+cp .env.local.example .env.local
+# .env.local 파일을 열어서 실제 값으로 수정하세요
 ```
+
+**필요한 환경 변수:**
+- `SUPABASE_URL`: Supabase 프로젝트 URL
+- `SUPABASE_SERVICE_KEY`: Supabase Service Role Key (서버 사이드 전용)
+- `NEXT_PUBLIC_SUPABASE_URL`: Supabase 프로젝트 URL (클라이언트용)
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase Anon Key (클라이언트용)
+- `OPENAI_API_KEY`: OpenAI API 키
+- `NAVER_CLIENT_ID`: Naver API 클라이언트 ID
+- `NAVER_CLIENT_SECRET`: Naver API 클라이언트 Secret
 
 3. **Frontend 의존성 설치**
 ```bash
