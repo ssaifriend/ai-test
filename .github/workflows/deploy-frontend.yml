@@ -17,16 +17,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
-          cache: "yarn"
-          cache-dependency-path: frontend/yarn.lock
+          node-version: "24"
 
-      - name: Setup Yarn
-        run: corepack enable
-
-      - name: Install dependencies
+      - name: Setup Yarn Berry
         working-directory: ./frontend
-        run: yarn install --frozen-lockfile
+        run: |
+          corepack enable
+          corepack prepare yarn@stable --activate
+          yarn --version
 
       - name: Build
         working-directory: ./frontend
