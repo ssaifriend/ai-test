@@ -144,7 +144,7 @@ JSON만 응답하고 다른 텍스트는 포함하지 마세요.`;
       synthesisModel: model,
     };
   } catch (error) {
-    console.error("Synthesis Agent 실행 실패:", error instanceof Error ? error.message : String(error));
+    logError("Synthesis Agent 실행 실패:", error);
 
     // 기본값 반환
     return {

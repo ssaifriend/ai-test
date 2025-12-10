@@ -174,7 +174,7 @@ JSON만 응답하고 다른 텍스트는 포함하지 마세요.`;
       changedAgents: Array.isArray(parsed.changedAgents) ? parsed.changedAgents : [],
     };
   } catch (error) {
-    console.error("Debate Agent 실행 실패:", error instanceof Error ? error.message : String(error));
+    logError("Debate Agent 실행 실패:", error);
 
     return {
       hadDebate: true,

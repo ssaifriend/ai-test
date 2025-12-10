@@ -410,7 +410,7 @@ export class SmartDataCollector {
 
       return Object.keys(financials).length > 0 ? financials : null;
     } catch (error) {
-      console.error(`DART API 호출 실패 (${stockCode}):`, error);
+      logError(`DART API 호출 실패 (${stockCode}):`, error);
       return null;
     }
   }
@@ -454,7 +454,7 @@ export class SmartDataCollector {
 
       return Object.keys(marketData).length > 0 ? marketData : null;
     } catch (error) {
-      console.error(`네이버 금융 데이터 수집 실패 (${stockCode}):`, error);
+      logError(`네이버 금융 데이터 수집 실패 (${stockCode}):`, error);
       return null;
     }
   }

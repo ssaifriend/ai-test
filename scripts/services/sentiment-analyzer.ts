@@ -173,7 +173,7 @@ JSON만 응답하고 다른 텍스트는 포함하지 마세요.`;
         await new Promise((resolve) => setTimeout(resolve, 1000));
       }
     } catch (error) {
-      console.error(`  ❌ 배치 ${batchIdx + 1} 분석 실패:`, error instanceof Error ? error.message : String(error));
+      logError(`  ❌ 배치 ${batchIdx + 1} 분석 실패:`, error);
 
       // 실패한 배치의 모든 항목에 기본값 설정
       for (const newsItem of batch) {

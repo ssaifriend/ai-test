@@ -128,7 +128,7 @@ JSON만 응답하고 다른 텍스트는 포함하지 마세요.`;
     };
   } catch (error) {
     // 에러 발생 시 기본값 반환
-    console.error(`Technical Agent 실행 실패 (${stockName}):`, error instanceof Error ? error.message : String(error));
+    logError(`Technical Agent 실행 실패 (${stockName}):`, error);
 
     return {
       agentName: "technical",
