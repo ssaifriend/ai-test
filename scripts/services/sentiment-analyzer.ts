@@ -5,7 +5,7 @@
  * 50개씩 묶어서 한 번의 API 호출로 처리하여 비용을 절감합니다.
  */
 
-import OpenAI from "openai";
+import { OpenAI } from "openai";
 import { loadEnv } from "../utils/env.ts";
 
 export interface SentimentResult {

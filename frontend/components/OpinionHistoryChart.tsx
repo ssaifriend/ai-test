@@ -74,7 +74,6 @@ export default function OpinionHistoryChart({ opinions }: OpinionHistoryChartPro
             stroke="#10b981"
             strokeWidth={2}
             dot={{ r: 4 }}
-            yAxisId={1}
             strokeDasharray="5 5"
           />
         </LineChart>

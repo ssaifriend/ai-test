@@ -58,7 +58,7 @@ async function runFilteringPipeline(
   const filterRate = rawNews.length > 0 ? ((rawNews.length - finalNews.length) / rawNews.length) * 100 : 0;
 
   for (const news of finalNews) {
-    const filterScore = calculateFilterScore(news);
+    const filterScore = calculateFilterScore(news, sourceStatsWithTier, dedupStats);
     await supabase
       .from("news_articles")
       .update({

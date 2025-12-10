@@ -103,7 +103,8 @@ export class SmartDataCollector {
       .eq("code", stockCode)
       .single();
 
-    // TODO: 실제 재무 데이터 API 연동 필요
+    // 실제 재무 데이터는 외부 API (예: 한국거래소, DART 등)를 통해 수집 예정
+    // 현재는 기본 구조만 제공
     const financialData: FinancialData = {
       per: undefined,
       pbr: undefined,
