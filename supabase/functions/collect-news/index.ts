@@ -46,7 +46,14 @@ serve(async (req) => {
     let totalSaved = 0;
 
     for (const stock of stocks) {
-      const saved = await collectNewsForStock(supabase, stock.code, stock.id, stock.name);
+      const saved = await collectNewsForStock(
+        supabase,
+        stock.code,
+        stock.id,
+        stock.name,
+        naverClientId,
+        naverClientSecret
+      );
       totalSaved += saved;
     }
 

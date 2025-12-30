@@ -11,9 +11,19 @@ export async function collectNewsForStock(
   stockCode: string,
   stockId: string,
   stockName: string,
+  naverClientId?: string,
+  naverClientSecret?: string,
   display: number = 50
 ): Promise<number> {
-  const { naverClientId, naverClientSecret } = loadEnv();
+  // 환경 변수에서 로드 (Edge Function에서 전달되지 않은 경우)
+  let finalNaverClientId = naverClientId;
+  let finalNaverClientSecret = naverClientSecret;
+
+  if (!finalNaverClientId || !finalNaverClientSecret) {
+    const env = loadEnv();
+    finalNaverClientId = env.naverClientId;
+    finalNaverClientSecret = env.naverClientSecret;
+  }
 
   const query = encodeURIComponent(stockName);
   const url = `https://openapi.naver.com/v1/search/news.json?query=${query}&display=${display}&sort=date`;
