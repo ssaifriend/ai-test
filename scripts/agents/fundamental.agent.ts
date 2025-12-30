@@ -13,6 +13,8 @@ export interface AgentOpinion {
   recommendation: "buy" | "sell" | "hold";
   confidence: number; // 0-100
   reasoning: string[];
+  targetPrice?: number; // 목표가 (원)
+  stopLoss?: number; // 손절가 (원)
 }
 
 export interface FundamentalAgentResult extends AgentOpinion {
@@ -33,7 +35,8 @@ export async function runFundamentalAgent(
   stockCode: string,
   stockName: string,
   dataCollector: SmartDataCollector,
-  stockId?: string
+  stockId?: string,
+  currentPrice?: number
 ): Promise<FundamentalAgentResult> {
   // 재무 데이터 수집
   const financialData = await dataCollector.collectFinancialData(stockCode);
@@ -42,6 +45,7 @@ export async function runFundamentalAgent(
   const prompt = `당신은 한국 주식 시장의 재무 분석 전문가입니다. 다음 종목의 재무 지표를 분석하여 투자 의견을 제시하세요.
 
 종목명: ${stockName} (${stockCode})
+${currentPrice ? `현재가: ${currentPrice.toLocaleString()}원` : "현재가: 데이터 없음"}
 
 재무 지표:
 ${financialData.per !== undefined ? `- PER (주가수익비율): ${financialData.per}` : "- PER: 데이터 없음"}
@@ -65,8 +69,15 @@ ${financialData.netProfit !== undefined ? `- 순이익: ${financialData.netProfi
   "recommendation": "buy" | "sell" | "hold",
   "confidence": 0-100,
   "reasoning": ["이유1", "이유2", "이유3"],
+  "targetPrice": 목표가 (원, 정수),
+  "stopLoss": 손절가 (원, 정수),
   "evaluation": "재무 지표 종합 평가 (100자 이내)"
 }
+
+주의사항:
+- targetPrice는 buy일 경우 현재가보다 높게, sell일 경우 현재가보다 낮게 설정
+- stopLoss는 buy일 경우 현재가보다 낮게, sell일 경우 현재가보다 높게 설정
+- 현재가 정보가 없으면 targetPrice와 stopLoss를 null로 설정
 
 JSON만 응답하고 다른 텍스트는 포함하지 마세요.`;
 
@@ -99,6 +110,8 @@ JSON만 응답하고 다른 텍스트는 포함하지 마세요.`;
       recommendation: "buy" | "sell" | "hold";
       confidence: number;
       reasoning: string[];
+      targetPrice?: number;
+      stopLoss?: number;
       evaluation: string;
     };
 
@@ -115,6 +128,8 @@ JSON만 응답하고 다른 텍스트는 포함하지 마세요.`;
       recommendation: parsed.recommendation,
       confidence,
       reasoning: reasoning.slice(0, 5), // 최대 5개
+      targetPrice: parsed.targetPrice || undefined,
+      stopLoss: parsed.stopLoss || undefined,
       analysis: {
         per: financialData.per,
         pbr: financialData.pbr,

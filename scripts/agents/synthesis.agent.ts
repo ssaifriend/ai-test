@@ -55,11 +55,15 @@ export async function runSynthesisAgent(
 의견: ${opinions.fundamental.recommendation}
 신뢰도: ${opinions.fundamental.confidence}%
 근거: ${opinions.fundamental.reasoning.join(", ")}
+${opinions.fundamental.targetPrice ? `목표가: ${opinions.fundamental.targetPrice.toLocaleString()}원` : ""}
+${opinions.fundamental.stopLoss ? `손절가: ${opinions.fundamental.stopLoss.toLocaleString()}원` : ""}
 
 [Technical Agent]
 의견: ${opinions.technical.recommendation}
 신뢰도: ${opinions.technical.confidence}%
 근거: ${opinions.technical.reasoning.join(", ")}
+${opinions.technical.targetPrice ? `목표가: ${opinions.technical.targetPrice.toLocaleString()}원` : ""}
+${opinions.technical.stopLoss ? `손절가: ${opinions.technical.stopLoss.toLocaleString()}원` : ""}
 
 [News Agent]
 의견: ${opinions.news.recommendation}

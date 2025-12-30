@@ -41,8 +41,8 @@ export async function runMultiAgentAnalysis(
     // 1. 각 Agent 실행 (병렬)
     console.log("🤖 Agent 실행 중...");
     const [fundamental, technical, news, macro, risk] = await Promise.all([
-      runFundamentalAgent(stockCode, stockName, dataCollector, stockId),
-      runTechnicalAgent(stockCode, stockName, dataCollector, stockId),
+      runFundamentalAgent(stockCode, stockName, dataCollector, stockId, currentPrice),
+      runTechnicalAgent(stockCode, stockName, dataCollector, stockId, currentPrice),
       runNewsAgent(stockId, stockName, dataCollector),
       runMacroAgent(stockName, dataCollector, stockId),
       runRiskAgent(stockCode, stockName, dataCollector, stockId),
@@ -100,10 +100,14 @@ export async function runMultiAgentAnalysis(
       fundamental_rec: opinions.fundamental.recommendation,
       fundamental_confidence: opinions.fundamental.confidence,
       fundamental_reasoning: opinions.fundamental.reasoning,
+      fundamental_target_price: opinions.fundamental.targetPrice,
+      fundamental_stop_loss: opinions.fundamental.stopLoss,
 
       technical_rec: opinions.technical.recommendation,
       technical_confidence: opinions.technical.confidence,
       technical_reasoning: opinions.technical.reasoning,
+      technical_target_price: opinions.technical.targetPrice,
+      technical_stop_loss: opinions.technical.stopLoss,
 
       news_rec: opinions.news.recommendation,
       news_confidence: opinions.news.confidence,

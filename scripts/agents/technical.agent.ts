@@ -31,7 +31,8 @@ export async function runTechnicalAgent(
   stockCode: string,
   stockName: string,
   dataCollector: SmartDataCollector,
-  stockId?: string
+  stockId?: string,
+  currentPrice?: number
 ): Promise<TechnicalAgentResult> {
 
   // 기술적 지표 수집
@@ -62,9 +63,16 @@ ${technicalData.volume !== undefined ? `- 거래량: ${technicalData.volume.toLo
   "recommendation": "buy" | "sell" | "hold",
   "confidence": 0-100,
   "reasoning": ["이유1", "이유2", "이유3"],
+  "targetPrice": 목표가 (원, 정수),
+  "stopLoss": 손절가 (원, 정수),
   "trend": "bullish" | "bearish" | "neutral",
   "evaluation": "기술적 지표 종합 평가 (100자 이내)"
 }
+
+주의사항:
+- targetPrice는 buy일 경우 현재가보다 높게, sell일 경우 현재가보다 낮게 설정
+- stopLoss는 buy일 경우 현재가보다 낮게, sell일 경우 현재가보다 높게 설정
+- 현재가 정보가 없으면 targetPrice와 stopLoss를 null로 설정
 
 JSON만 응답하고 다른 텍스트는 포함하지 마세요.`;
 
@@ -97,6 +105,8 @@ JSON만 응답하고 다른 텍스트는 포함하지 마세요.`;
       recommendation: "buy" | "sell" | "hold";
       confidence: number;
       reasoning: string[];
+      targetPrice?: number;
+      stopLoss?: number;
       trend: "bullish" | "bearish" | "neutral";
       evaluation: string;
     };
@@ -115,6 +125,8 @@ JSON만 응답하고 다른 텍스트는 포함하지 마세요.`;
       recommendation: parsed.recommendation,
       confidence,
       reasoning: reasoning.slice(0, 5), // 최대 5개
+      targetPrice: parsed.targetPrice || undefined,
+      stopLoss: parsed.stopLoss || undefined,
       analysis: {
         price: technicalData.price,
         ma5: technicalData.ma5,
