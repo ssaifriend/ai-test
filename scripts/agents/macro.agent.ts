@@ -27,7 +27,8 @@ export interface MacroAgentResult extends AgentOpinion {
  */
 export async function runMacroAgent(
   stockName: string,
-  dataCollector: SmartDataCollector
+  dataCollector: SmartDataCollector,
+  stockId?: string
 ): Promise<MacroAgentResult> {
 
   // 거시경제 데이터 수집
@@ -75,6 +76,8 @@ JSON만 응답하고 다른 텍스트는 포함하지 마세요.`;
       ],
       temperature: 0.3,
       response_format: { type: "json_object" },
+      operation: "agent",
+      stock_id: stockId,
     });
 
     const content = response.choices[0]?.message?.content;

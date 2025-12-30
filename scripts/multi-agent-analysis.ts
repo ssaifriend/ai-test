@@ -41,11 +41,11 @@ export async function runMultiAgentAnalysis(
     // 1. 각 Agent 실행 (병렬)
     console.log("🤖 Agent 실행 중...");
     const [fundamental, technical, news, macro, risk] = await Promise.all([
-      runFundamentalAgent(stockCode, stockName, dataCollector),
-      runTechnicalAgent(stockCode, stockName, dataCollector),
+      runFundamentalAgent(stockCode, stockName, dataCollector, stockId),
+      runTechnicalAgent(stockCode, stockName, dataCollector, stockId),
       runNewsAgent(stockId, stockName, dataCollector),
-      runMacroAgent(stockName, dataCollector),
-      runRiskAgent(stockCode, stockName, dataCollector),
+      runMacroAgent(stockName, dataCollector, stockId),
+      runRiskAgent(stockCode, stockName, dataCollector, stockId),
     ]);
 
     // 캐시 사용 여부 확인
@@ -73,7 +73,7 @@ export async function runMultiAgentAnalysis(
     let debateResult;
     if (consensusLevel < 70) {
       console.log("💬 토론 시작...");
-      debateResult = await runDebateAgent(opinions);
+      debateResult = await runDebateAgent(opinions, stockId);
       console.log(`  ✅ 토론 완료 (합의도: ${debateResult.consensusLevel}%)\n`);
     } else {
       debateResult = {
@@ -85,7 +85,7 @@ export async function runMultiAgentAnalysis(
 
     // 4. Synthesis Agent 실행
     console.log("🔮 최종 의견 종합 중...");
-    const synthesis = await runSynthesisAgent(stockName, stockCode, opinions, debateResult);
+    const synthesis = await runSynthesisAgent(stockName, stockCode, opinions, debateResult, stockId);
     console.log(`  ✅ 최종 의견: ${synthesis.finalRecommendation} (${synthesis.finalConfidence}%)`);
     console.log(`  📊 모델: ${synthesis.synthesisModel}\n`);
 

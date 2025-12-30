@@ -84,7 +84,7 @@ export function calculateConsensus(opinions: AgentOpinions): number {
  * @param opinions - 각 Agent의 의견
  * @returns 토론 결과
  */
-export async function runDebateAgent(opinions: AgentOpinions): Promise<DebateResult> {
+export async function runDebateAgent(opinions: AgentOpinions, stockId?: string): Promise<DebateResult> {
   const consensusLevel = calculateConsensus(opinions);
 
   // 합의도가 70% 이상이면 토론 불필요
@@ -151,6 +151,8 @@ JSON만 응답하고 다른 텍스트는 포함하지 마세요.`;
       ],
       temperature: 0.5,
       response_format: { type: "json_object" },
+      operation: "debate",
+      stock_id: stockId,
     });
 
     const content = response.choices[0]?.message?.content;

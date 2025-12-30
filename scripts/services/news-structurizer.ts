@@ -24,7 +24,8 @@ export interface StructuredNews {
  */
 export async function structureNewsContent(
   content: string,
-  title?: string
+  title?: string,
+  stockId?: string
 ): Promise<StructuredNews> {
   // 본문 길이 제한 (토큰 절약)
   const truncatedContent = content.substring(0, 3000);
@@ -61,6 +62,8 @@ JSON만 응답하고 다른 텍스트는 포함하지 마세요.`;
       ],
       temperature: 0.3,
       response_format: { type: "json_object" },
+      operation: "structure",
+      stock_id: stockId,
     });
 
     const content = response.choices[0]?.message?.content;

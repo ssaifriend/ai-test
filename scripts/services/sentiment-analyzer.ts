@@ -53,7 +53,8 @@ function chunk<T>(array: T[], batchSize: number): T[][] {
  */
 export async function batchAnalyzeSentiment(
   newsItems: NewsItemForAnalysis[],
-  batchSize: number = 50
+  batchSize: number = 50,
+  stockId?: string
 ): Promise<SentimentResult[]> {
 
   // 배치로 분할
@@ -107,6 +108,8 @@ JSON만 응답하고 다른 텍스트는 포함하지 마세요.`;
         ],
         temperature: 0.3,
         response_format: { type: "json_object" },
+        operation: "sentiment",
+        stock_id: stockId,
       });
 
       const content = response.choices[0]?.message?.content;
