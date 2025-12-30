@@ -30,6 +30,7 @@ jobs:
           deno check scripts/utils/error-handler.ts
           deno check scripts/utils/kis-api.ts
           deno check scripts/utils/technical-indicators.ts
+          deno check scripts/utils/openai-helper.ts
 
           # Core types
           deno check scripts/types.ts
@@ -44,6 +45,7 @@ jobs:
           # Services
           deno check scripts/services/smart-data-collector.ts
           deno check scripts/services/sentiment-analyzer.ts
+          deno check scripts/services/news-structurizer.ts
 
           # Agents
           deno check scripts/agents/fundamental.agent.ts
@@ -52,6 +54,7 @@ jobs:
           deno check scripts/agents/macro.agent.ts
           deno check scripts/agents/risk.agent.ts
           deno check scripts/agents/synthesis.agent.ts
+          deno check scripts/agents/debate.agent.ts
 
           # Test scripts
           deno check scripts/test-openai.ts
