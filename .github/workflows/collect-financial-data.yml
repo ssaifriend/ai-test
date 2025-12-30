@@ -2,8 +2,8 @@ name: Collect Financial Data
 
 on:
   schedule:
-    # 매 1시간마다 실행 (매시 정각)
-    - cron: "0 * * * *"
+    # 매일 오후 2시 (KST 14:00 = UTC 05:00) 실행
+    - cron: "0 5 * * *"
   workflow_dispatch:
     inputs:
       force_run:

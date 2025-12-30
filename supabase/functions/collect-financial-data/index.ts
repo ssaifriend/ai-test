@@ -3,6 +3,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2?target=deno";
+import { DOMParser } from "https://deno.land/x/deno_dom@v0.1.38/deno-dom-wasm.ts";
 
 serve(async (req) => {
   const corsHeaders = {
@@ -128,73 +129,22 @@ serve(async (req) => {
 
 /**
  * DART API를 통한 재무제표 데이터 수집
+ * DART는 종목코드가 아닌 고유 법인코드(corp_code)가 필요하므로 스킵
+ * 대신 네이버 금융에서 모든 데이터 수집
  */
 async function fetchDARTFinancialData(
   stockCode: string,
   apiKey: string
 ): Promise<any | null> {
-  try {
-    const currentYear = new Date().getFullYear();
-    const reportCode = "11013"; // 1분기보고서
-
-    const companyInfoUrl = `https://opendart.fss.or.kr/api/company.json?crtfc_key=${apiKey}&corp_code=${stockCode}`;
-    const companyResponse = await fetch(companyInfoUrl);
-
-    if (!companyResponse.ok) {
-      return null;
-    }
-
-    const companyData = await companyResponse.json();
-    if (companyData.status !== "000") {
-      return null;
-    }
-
-    const corpCode = companyData.corp_code || stockCode;
-
-    const financialUrl = `https://opendart.fss.or.kr/api/fnlttSinglAcnt.json?crtfc_key=${apiKey}&corp_code=${corpCode}&bsns_year=${currentYear}&reprt_code=${reportCode}`;
-    const response = await fetch(financialUrl);
-
-    if (!response.ok) {
-      return null;
-    }
-
-    const data = await response.json();
-    if (data.status !== "000" || !data.list || data.list.length === 0) {
-      return null;
-    }
-
-    const financials: any = {};
-
-    for (const item of data.list) {
-      const accountNm = item.account_nm;
-      const thstrmAmount = parseFloat(item.thstrm_amount?.replace(/,/g, "") || "0");
-
-      if (accountNm.includes("당기순이익") || accountNm.includes("당기순손익")) {
-        if (!financials.netProfit || Math.abs(thstrmAmount) > Math.abs(financials.netProfit || 0)) {
-          financials.netProfit = thstrmAmount;
-        }
-      }
-      if (accountNm.includes("영업이익")) {
-        if (!financials.operatingProfit || Math.abs(thstrmAmount) > Math.abs(financials.operatingProfit || 0)) {
-          financials.operatingProfit = thstrmAmount;
-        }
-      }
-      if (accountNm.includes("매출액") || accountNm.includes("매출")) {
-        if (!financials.revenue || Math.abs(thstrmAmount) > Math.abs(financials.revenue || 0)) {
-          financials.revenue = thstrmAmount;
-        }
-      }
-    }
-
-    return Object.keys(financials).length > 0 ? financials : null;
-  } catch (error) {
-    console.error(`DART API 호출 실패 (${stockCode}):`, error);
-    return null;
-  }
+  // DART API는 법인코드 매핑 테이블이 필요하므로 현재는 스킵
+  // 향후 개선: corp_code 매핑 테이블 구축
+  console.log(`DART API 스킵 (법인코드 매핑 필요): ${stockCode}`);
+  return null;
 }
 
 /**
  * 네이버 금융에서 PER/PBR 등 시장 지표 수집
+ * deno_dom을 사용한 HTML 파싱으로 정확도 향상
  */
 async function fetchNaverFinanceData(stockCode: string): Promise<any | null> {
   try {
@@ -207,32 +157,138 @@ async function fetchNaverFinanceData(stockCode: string): Promise<any | null> {
     });
 
     if (!response.ok) {
+      console.log(`네이버 금융 접근 실패 (${stockCode}): HTTP ${response.status}`);
       return null;
     }
 
     const html = await response.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
 
-    const perMatch = html.match(/PER[^<]*?(\d+\.?\d*)/i);
-    const pbrMatch = html.match(/PBR[^<]*?(\d+\.?\d*)/i);
-    const roeMatch = html.match(/ROE[^<]*?(\d+\.?\d*)/i);
-    const debtRatioMatch = html.match(/부채비율[^<]*?(\d+\.?\d*)/i);
+    if (!doc) {
+      console.log(`HTML 파싱 실패 (${stockCode})`);
+      return null;
+    }
 
     const marketData: any = {};
 
-    if (perMatch && perMatch[1]) {
-      marketData.per = parseFloat(perMatch[1]);
-    }
-    if (pbrMatch && pbrMatch[1]) {
-      marketData.pbr = parseFloat(pbrMatch[1]);
-    }
-    if (roeMatch && roeMatch[1]) {
-      marketData.roe = parseFloat(roeMatch[1]);
-    }
-    if (debtRatioMatch && debtRatioMatch[1]) {
-      marketData.debtRatio = parseFloat(debtRatioMatch[1]);
+    // 1. 주요 투자지표 테이블에서 PER, PBR, ROE 추출
+    const tables = doc.querySelectorAll("table");
+
+    for (const table of tables) {
+      const rows = (table as any).querySelectorAll("tr");
+
+      for (const row of rows) {
+        const cells = (row as any).querySelectorAll("th, td");
+        const cellTexts = Array.from(cells).map((cell: any) =>
+          cell.textContent?.replace(/\s+/g, " ").trim() || ""
+        );
+
+        // PER (주가수익비율)
+        if (cellTexts.some((text) => text.includes("PER"))) {
+          const perIndex = cellTexts.findIndex((text) => text.includes("PER"));
+          if (perIndex >= 0 && perIndex + 1 < cellTexts.length) {
+            const perText = cellTexts[perIndex + 1];
+            const perMatch = perText.match(/(\d+\.?\d*)/);
+            if (perMatch) {
+              marketData.per = parseFloat(perMatch[1]);
+            }
+          }
+        }
+
+        // PBR (주가순자산비율)
+        if (cellTexts.some((text) => text.includes("PBR"))) {
+          const pbrIndex = cellTexts.findIndex((text) => text.includes("PBR"));
+          if (pbrIndex >= 0 && pbrIndex + 1 < cellTexts.length) {
+            const pbrText = cellTexts[pbrIndex + 1];
+            const pbrMatch = pbrText.match(/(\d+\.?\d*)/);
+            if (pbrMatch) {
+              marketData.pbr = parseFloat(pbrMatch[1]);
+            }
+          }
+        }
+
+        // ROE (자기자본이익률)
+        if (cellTexts.some((text) => text.includes("ROE"))) {
+          const roeIndex = cellTexts.findIndex((text) => text.includes("ROE"));
+          if (roeIndex >= 0 && roeIndex + 1 < cellTexts.length) {
+            const roeText = cellTexts[roeIndex + 1];
+            const roeMatch = roeText.match(/(\d+\.?\d*)/);
+            if (roeMatch) {
+              marketData.roe = parseFloat(roeMatch[1]);
+            }
+          }
+        }
+
+        // 부채비율
+        if (cellTexts.some((text) => text.includes("부채비율"))) {
+          const debtIndex = cellTexts.findIndex((text) => text.includes("부채비율"));
+          if (debtIndex >= 0 && debtIndex + 1 < cellTexts.length) {
+            const debtText = cellTexts[debtIndex + 1];
+            const debtMatch = debtText.match(/(\d+\.?\d*)/);
+            if (debtMatch) {
+              marketData.debtRatio = parseFloat(debtMatch[1]);
+            }
+          }
+        }
+
+        // 당좌비율
+        if (cellTexts.some((text) => text.includes("당좌비율"))) {
+          const currentIndex = cellTexts.findIndex((text) => text.includes("당좌비율"));
+          if (currentIndex >= 0 && currentIndex + 1 < cellTexts.length) {
+            const currentText = cellTexts[currentIndex + 1];
+            const currentMatch = currentText.match(/(\d+\.?\d*)/);
+            if (currentMatch) {
+              marketData.currentRatio = parseFloat(currentMatch[1]);
+            }
+          }
+        }
+
+        // 매출액
+        if (cellTexts.some((text) => text.includes("매출액"))) {
+          const revenueIndex = cellTexts.findIndex((text) => text.includes("매출액"));
+          if (revenueIndex >= 0 && revenueIndex + 1 < cellTexts.length) {
+            const revenueText = cellTexts[revenueIndex + 1];
+            const revenueMatch = revenueText.match(/(\d+)/);
+            if (revenueMatch) {
+              marketData.revenue = parseInt(revenueMatch[1]);
+            }
+          }
+        }
+
+        // 영업이익
+        if (cellTexts.some((text) => text.includes("영업이익"))) {
+          const opIndex = cellTexts.findIndex((text) => text.includes("영업이익"));
+          if (opIndex >= 0 && opIndex + 1 < cellTexts.length) {
+            const opText = cellTexts[opIndex + 1];
+            const opMatch = opText.match(/(\d+)/);
+            if (opMatch) {
+              marketData.operatingProfit = parseInt(opMatch[1]);
+            }
+          }
+        }
+
+        // 당기순이익
+        if (cellTexts.some((text) => text.includes("당기순이익"))) {
+          const netIndex = cellTexts.findIndex((text) => text.includes("당기순이익"));
+          if (netIndex >= 0 && netIndex + 1 < cellTexts.length) {
+            const netText = cellTexts[netIndex + 1];
+            const netMatch = netText.match(/(\d+)/);
+            if (netMatch) {
+              marketData.netProfit = parseInt(netMatch[1]);
+            }
+          }
+        }
+      }
     }
 
-    return Object.keys(marketData).length > 0 ? marketData : null;
+    if (Object.keys(marketData).length > 0) {
+      console.log(`✓ 네이버 금융 데이터 수집 성공 (${stockCode}):`, Object.keys(marketData).join(", "));
+      return marketData;
+    } else {
+      console.log(`⚠️  네이버 금융 데이터 없음 (${stockCode})`);
+      return null;
+    }
   } catch (error) {
     console.error(`네이버 금융 데이터 수집 실패 (${stockCode}):`, error);
     return null;
