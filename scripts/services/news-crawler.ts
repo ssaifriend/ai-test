@@ -5,7 +5,7 @@
  * Naver 뉴스의 경우 `#newsct_article` 셀렉터를 사용하여 본문을 추출합니다.
  */
 
-import { load } from "npm:cheerio@1";
+import { parseHTML } from "https://esm.sh/linkedom@0.17.0?target=deno";
 
 export interface CrawledContent {
   title: string;
@@ -62,22 +62,24 @@ export async function crawlNewsContent(
       }
 
       const html = await response.text();
-      const $ = load(html);
+      const { document } = parseHTML(html);
+
+      const text = (sel: string) => document.querySelector(sel)?.textContent?.trim() || "";
 
       // 제목 추출 (여러 가능한 셀렉터 시도)
       let title =
-        $("h2#title_area").text().trim() ||
-        $("h3.media_end_head_headline").text().trim() ||
-        $("h1").first().text().trim() ||
-        $("title").text().trim();
+        text("h2#title_area") ||
+        text("h3.media_end_head_headline") ||
+        (document.querySelectorAll("h1")[0]?.textContent?.trim() || "") ||
+        text("title");
 
       // 본문 추출 (Naver 뉴스: #newsct_article)
       let content =
-        $("#newsct_article").text().trim() ||
-        $("article").text().trim() ||
-        $(".article_body").text().trim() ||
-        $("main").text().trim() ||
-        $("body").text().trim();
+        text("#newsct_article") ||
+        text("article") ||
+        text(".article_body") ||
+        text("main") ||
+        text("body");
 
       // 불필요한 공백 정리
       content = content.replace(/\s+/g, " ").trim();
