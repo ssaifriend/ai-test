@@ -5,7 +5,6 @@
  * 50개씩 묶어서 한 번의 API 호출로 처리하여 비용을 절감합니다.
  */
 
-import OpenAI from "npm:openai@4";
 import { loadEnv } from "../utils/env.ts";
 import { logError } from "../utils/error-handler.ts";
 
@@ -56,8 +55,14 @@ export async function batchAnalyzeSentiment(
   newsItems: NewsItemForAnalysis[],
   batchSize: number = 50
 ): Promise<SentimentResult[]> {
-  const { openaiApiKey } = loadEnv();
-  const openai = new OpenAI({ apiKey: openaiApiKey });
+  // Edge Functions 환경에서는 Deno.env.get()로 직접 읽기
+  let openaiApiKey = Deno.env.get("OPENAI_API_KEY");
+
+  // 로컬 실행 시에는 loadEnv()로 읽기
+  if (!openaiApiKey) {
+    const env = loadEnv();
+    openaiApiKey = env.openaiApiKey;
+  }
 
   // 배치로 분할
   const batches = chunk(newsItems, batchSize);
@@ -95,24 +100,37 @@ JSON 배열로 반환하세요:
 
 JSON만 응답하고 다른 텍스트는 포함하지 마세요.`;
 
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are a financial news sentiment analyst. Analyze sentiment of news articles and return results as a JSON array. Be concise and accurate.",
-          },
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
-        temperature: 0.3,
-        response_format: { type: "json_object" },
+      // OpenAI API 직접 호출 (Edge Functions 호환)
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${openaiApiKey}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are a financial news sentiment analyst. Analyze sentiment of news articles and return results as a JSON array. Be concise and accurate.",
+            },
+            {
+              role: "user",
+              content: prompt,
+            },
+          ],
+          temperature: 0.3,
+          response_format: { type: "json_object" },
+        }),
       });
 
-      const content = response.choices[0]?.message?.content;
+      if (!response.ok) {
+        throw new Error(`OpenAI API 오류: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const content = data.choices[0]?.message?.content;
       if (!content) {
         throw new Error("LLM 응답이 비어있습니다.");
       }

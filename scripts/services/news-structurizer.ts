@@ -5,7 +5,6 @@
  * 원문은 저장하지 않고 요약만 저장하여 저작권 문제를 방지합니다.
  */
 
-import OpenAI from "npm:openai@4";
 import { loadEnv } from "../utils/env.ts";
 
 export interface StructuredNews {
@@ -36,8 +35,6 @@ export async function structureNewsContent(
     openaiApiKey = env.openaiApiKey;
   }
 
-  const openai = new OpenAI({ apiKey: openaiApiKey });
-
   // 본문 길이 제한 (토큰 절약)
   const truncatedContent = content.substring(0, 3000);
 
@@ -58,24 +55,37 @@ ${truncatedContent}
 JSON만 응답하고 다른 텍스트는 포함하지 마세요.`;
 
   try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a financial news analyst. Extract key information from news articles and structure it as JSON. Never reproduce the original text verbatim.",
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      temperature: 0.3,
-      response_format: { type: "json_object" },
+    // OpenAI API 직접 호출 (Edge Functions 호환)
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${openaiApiKey}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a financial news analyst. Extract key information from news articles and structure it as JSON. Never reproduce the original text verbatim.",
+          },
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        temperature: 0.3,
+        response_format: { type: "json_object" },
+      }),
     });
 
-    const content = response.choices[0]?.message?.content;
+    if (!response.ok) {
+      throw new Error(`OpenAI API 오류: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const content = data.choices[0]?.message?.content;
     if (!content) {
       throw new Error("LLM 응답이 비어있습니다.");
     }
