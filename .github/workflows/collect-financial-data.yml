@@ -1,0 +1,34 @@
+name: Collect Financial Data
+
+on:
+  schedule:
+    # 매 1시간마다 실행 (매시 정각)
+    - cron: "0 * * * *"
+  workflow_dispatch:
+    inputs:
+      force_run:
+        description: 'Force run financial data collection'
+        required: false
+        default: 'false'
+
+jobs:
+  collect-financial-data:
+    name: Collect Financial Data
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.40.0
+
+      - name: Collect financial data
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          DART_API_KEY: ${{ secrets.DART_API_KEY }}
+        run: |
+          deno run --allow-net --allow-env --allow-read scripts/collect-financial-data.ts
