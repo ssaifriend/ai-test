@@ -1,4 +1,7 @@
 {
   "buildCommand": "yarn build",
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "git": {
+    "deploymentEnabled": false
+  }
 }
