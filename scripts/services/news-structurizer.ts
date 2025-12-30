@@ -27,7 +27,15 @@ export async function structureNewsContent(
   content: string,
   title?: string
 ): Promise<StructuredNews> {
-  const { openaiApiKey } = loadEnv();
+  // Edge Functions 환경에서는 Deno.env.get()로 직접 읽기
+  let openaiApiKey = Deno.env.get("OPENAI_API_KEY");
+
+  // 로컬 실행 시에는 loadEnv()로 읽기
+  if (!openaiApiKey) {
+    const env = loadEnv();
+    openaiApiKey = env.openaiApiKey;
+  }
+
   const openai = new OpenAI({ apiKey: openaiApiKey });
 
   // 본문 길이 제한 (토큰 절약)
