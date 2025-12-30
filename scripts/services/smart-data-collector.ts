@@ -283,8 +283,6 @@ export class SmartDataCollector {
       return { ...cached, cached: true, cachedAt: new Date().toISOString() };
     }
 
-    // 실제로는 외부 API 호출 (예: 한국은행, 한국거래소 등)
-    // 현재는 기본값 반환
     const macroData: MacroData = {
       kospi: undefined,
       kosdaq: undefined,
@@ -292,6 +290,48 @@ export class SmartDataCollector {
       interestRate: undefined,
       cached: false,
     };
+
+    try {
+      const { kisAppKey, kisAppSecret } = loadEnv();
+
+      if (!kisAppKey || !kisAppSecret) {
+        console.log("ℹ️  거시경제 데이터 수집: KIS API 키 설정 필요");
+        this.setCache(cacheKey, macroData, CACHE_TTL.macro);
+        return macroData;
+      }
+
+      // 1. KOSPI 지수 조회 (0001 - 코스피)
+      try {
+        const kospiData = await getCurrentPrice(kisAppKey, kisAppSecret, "0001");
+        macroData.kospi = kospiData.price;
+      } catch (error) {
+        console.log("ℹ️  KOSPI 지수 조회 실패:", error);
+      }
+
+      // 2. KOSDAQ 지수 조회 (1001 - 코스닥)
+      try {
+        const kosdaqData = await getCurrentPrice(kisAppKey, kisAppSecret, "1001");
+        macroData.kosdaq = kosdaqData.price;
+      } catch (error) {
+        console.log("ℹ️  KOSDAQ 지수 조회 실패:", error);
+      }
+
+      // 3. USD/KRW 환율 조회
+      try {
+        // 한국투자증권 API에서 환율 조회 (외환 종목코드 사용 가능하면 사용)
+        // 없으면 공공 API나 다른 소스 사용
+        // 현재는 기본값 유지
+      } catch (error) {
+        console.log("ℹ️  USD/KRW 환율 조회 실패:", error);
+      }
+
+      // 4. 기준금리 - 한국은행 API 필요 (별도 구현 가능)
+      // 현재는 undefined로 유지
+
+      console.log(`✅ 거시경제 데이터 수집 완료: KOSPI=${macroData.kospi}, KOSDAQ=${macroData.kosdaq}`);
+    } catch (error) {
+      logError("❌ 거시경제 데이터 수집 실패:", error);
+    }
 
     this.setCache(cacheKey, macroData, CACHE_TTL.macro);
     return macroData;
@@ -301,14 +341,104 @@ export class SmartDataCollector {
    * 리스크 데이터 수집
    */
   async collectRiskData(stockCode: string): Promise<RiskData> {
-    // 실제로는 과거 데이터 분석 또는 외부 API 호출
-    // 현재는 기본값 반환
-    return {
+    const riskData: RiskData = {
       volatility: undefined,
       beta: undefined,
       maxDrawdown: undefined,
       riskLevel: "medium",
     };
+
+    try {
+      const { kisAppKey, kisAppSecret } = loadEnv();
+
+      if (!kisAppKey || !kisAppSecret) {
+        console.log(`ℹ️  리스크 데이터 수집: ${stockCode} - KIS API 키 설정 필요`);
+        return riskData;
+      }
+
+      // 1. 과거 100일 일봉 데이터 조회
+      const dailyChart = await getDailyChart(kisAppKey, kisAppSecret, stockCode, 100);
+
+      if (dailyChart.length < 20) {
+        console.log(`ℹ️  리스크 데이터: ${stockCode} - 충분한 데이터 없음 (${dailyChart.length}일)`);
+        return riskData;
+      }
+
+      const closePrices = dailyChart.map((item) => item.close);
+
+      // 2. 변동성 계산 (일간 수익률의 표준편차)
+      const returns: number[] = [];
+      for (let i = 1; i < closePrices.length; i++) {
+        const dailyReturn = (closePrices[i - 1] - closePrices[i]) / closePrices[i];
+        returns.push(dailyReturn);
+      }
+
+      const meanReturn = returns.reduce((sum, r) => sum + r, 0) / returns.length;
+      const variance = returns.reduce((sum, r) => sum + Math.pow(r - meanReturn, 2), 0) / returns.length;
+      riskData.volatility = Math.sqrt(variance) * 100; // 퍼센트로 표시
+
+      // 3. 최대낙폭 계산 (MDD - Maximum Drawdown)
+      let maxPrice = closePrices[0];
+      let maxDrawdown = 0;
+
+      for (const price of closePrices) {
+        if (price > maxPrice) {
+          maxPrice = price;
+        }
+        const drawdown = ((maxPrice - price) / maxPrice) * 100;
+        if (drawdown > maxDrawdown) {
+          maxDrawdown = drawdown;
+        }
+      }
+      riskData.maxDrawdown = maxDrawdown;
+
+      // 4. 베타 계산 (KOSPI 대비)
+      try {
+        const kospiChart = await getDailyChart(kisAppKey, kisAppSecret, "0001", 100);
+
+        if (kospiChart.length >= dailyChart.length) {
+          const kospiPrices = kospiChart.slice(0, dailyChart.length).map(item => item.close);
+          const kospiReturns: number[] = [];
+
+          for (let i = 1; i < kospiPrices.length; i++) {
+            kospiReturns.push((kospiPrices[i - 1] - kospiPrices[i]) / kospiPrices[i]);
+          }
+
+          // 공분산 계산
+          const meanKospiReturn = kospiReturns.reduce((sum, r) => sum + r, 0) / kospiReturns.length;
+          let covariance = 0;
+          for (let i = 0; i < returns.length && i < kospiReturns.length; i++) {
+            covariance += (returns[i] - meanReturn) * (kospiReturns[i] - meanKospiReturn);
+          }
+          covariance /= Math.min(returns.length, kospiReturns.length);
+
+          // 시장 분산 계산
+          const marketVariance = kospiReturns.reduce((sum, r) => sum + Math.pow(r - meanKospiReturn, 2), 0) / kospiReturns.length;
+
+          // 베타 = 공분산 / 시장분산
+          riskData.beta = marketVariance > 0 ? covariance / marketVariance : undefined;
+        }
+      } catch (error) {
+        console.log("ℹ️  베타 계산 실패:", error);
+      }
+
+      // 5. 리스크 레벨 결정
+      if (riskData.volatility !== undefined) {
+        if (riskData.volatility < 1.5) {
+          riskData.riskLevel = "low";
+        } else if (riskData.volatility < 3.0) {
+          riskData.riskLevel = "medium";
+        } else {
+          riskData.riskLevel = "high";
+        }
+      }
+
+      console.log(`✅ 리스크 데이터 수집 완료: ${stockCode} (변동성: ${riskData.volatility?.toFixed(2)}%, MDD: ${riskData.maxDrawdown?.toFixed(2)}%, 베타: ${riskData.beta?.toFixed(2)})`);
+    } catch (error) {
+      logError(`❌ 리스크 데이터 수집 실패 (${stockCode}):`, error);
+    }
+
+    return riskData;
   }
 
   /**
