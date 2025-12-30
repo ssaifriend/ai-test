@@ -44,12 +44,60 @@ serve(async (req) => {
       );
     }
 
+    let totalMediumOrHighNews = 0;
+
     for (const stock of stocks) {
       await analyzeSentimentForStock(supabase, stock.id);
+
+      // 최근 1시간 이내 medium 이상 importance 뉴스 개수 확인
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      const { data: importantNews, error: newsError } = await supabase
+        .from("news_articles")
+        .select("id", { count: "exact" })
+        .eq("stock_id", stock.id)
+        .in("importance", ["medium", "high"])
+        .gte("collected_at", oneHourAgo);
+
+      if (!newsError && importantNews) {
+        totalMediumOrHighNews += importantNews.length;
+      }
+    }
+
+    // medium 이상 뉴스가 1개 이상이면 Multi-Agent 분석 트리거
+    if (totalMediumOrHighNews >= 1) {
+      const githubToken = Deno.env.get("GITHUB_TOKEN");
+      const githubRepo = Deno.env.get("GITHUB_REPOSITORY") || "ssaifriend/ai-test";
+
+      if (githubToken) {
+        try {
+          await fetch(`https://api.github.com/repos/${githubRepo}/dispatches`, {
+            method: "POST",
+            headers: {
+              "Accept": "application/vnd.github+json",
+              "Authorization": `Bearer ${githubToken}`,
+              "X-GitHub-Api-Version": "2022-11-28",
+            },
+            body: JSON.stringify({
+              event_type: "news-trigger",
+              client_payload: {
+                important_news_count: totalMediumOrHighNews,
+              },
+            }),
+          });
+          console.log(`✅ Multi-Agent 분석 트리거 (중요 뉴스 ${totalMediumOrHighNews}개)`);
+        } catch (error) {
+          console.error("GitHub Actions 트리거 실패:", error);
+        }
+      }
     }
 
     return new Response(
-      JSON.stringify({ message: "감성 분석 완료", stocks: stocks.length }),
+      JSON.stringify({
+        message: "감성 분석 완료",
+        stocks: stocks.length,
+        important_news_count: totalMediumOrHighNews,
+        triggered_analysis: totalMediumOrHighNews >= 1,
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
   } catch (error) {

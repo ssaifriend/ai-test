@@ -2,9 +2,15 @@ name: Multi-Agent Analysis
 
 on:
   schedule:
-    # Daily at 18:00 KST (09:00 UTC) - After market close
-    - cron: "0 9 * * 1-5" # Mon-Fri only
+    # 장전: 08:30 KST (23:30 UTC 전날)
+    - cron: "30 23 * * 0-4" # Sun-Thu (Mon-Fri KST)
+    # 장중: 12:00 KST (03:00 UTC)
+    - cron: "0 3 * * 1-5" # Mon-Fri
+    # 장후: 15:40 KST (06:40 UTC)
+    - cron: "40 6 * * 1-5" # Mon-Fri
   workflow_dispatch:
+  repository_dispatch:
+    types: [news-trigger]
 
 jobs:
   multi-agent-analysis:
@@ -16,7 +22,27 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Check recent run (5 min cooldown for news trigger)
+        id: check_recent
+        if: github.event_name == 'repository_dispatch'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          # 최근 5분 이내 분석이 있는지 확인
+          RECENT_COUNT=$(curl -s "$SUPABASE_URL/rest/v1/investment_opinions?select=count&timestamp=gte.$(date -u -d '5 minutes ago' +%Y-%m-%dT%H:%M:%S)" \
+            -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" | jq '.[0].count // 0')
+
+          if [ "$RECENT_COUNT" -gt 0 ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "최근 5분 이내 분석이 있어 스킵합니다."
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Analyze sentiment
+        if: steps.check_recent.outputs.skip != 'true'
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -30,6 +56,7 @@ jobs:
             --fail-with-body || true
 
       - name: Run multi-agent analysis
+        if: steps.check_recent.outputs.skip != 'true'
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
