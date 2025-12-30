@@ -59,6 +59,7 @@ export interface InvestmentOpinion {
   consensus_level?: number;
   final_rec: string;
   final_confidence: number;
+  current_price?: number;
   target_price?: number;
   stop_loss?: number;
   time_horizon?: string;

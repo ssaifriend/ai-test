@@ -13,6 +13,7 @@ import type { DebateResult } from "./debate.agent.ts";
 export interface SynthesisResult {
   finalRecommendation: "buy" | "sell" | "hold";
   finalConfidence: number; // 0-100
+  currentPrice?: number;
   targetPrice?: number;
   stopLoss?: number;
   timeHorizon?: string;

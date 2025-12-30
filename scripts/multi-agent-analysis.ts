@@ -28,6 +28,16 @@ export async function runMultiAgentAnalysis(
   const dataCollector = new SmartDataCollector(supabase);
 
   try {
+    // 0. 현재가 조회
+    let currentPrice: number | undefined;
+    try {
+      const technicalData = await dataCollector.collectTechnicalData(stockCode);
+      currentPrice = technicalData.price || undefined;
+      console.log(`💰 현재가: ${currentPrice?.toLocaleString()}원`);
+    } catch (error) {
+      console.log("⚠️  현재가 조회 실패, 분석 계속 진행");
+    }
+
     // 1. 각 Agent 실행 (병렬)
     console.log("🤖 Agent 실행 중...");
     const [fundamental, technical, news, macro, risk] = await Promise.all([
@@ -116,6 +126,7 @@ export async function runMultiAgentAnalysis(
       // 최종 의견
       final_rec: synthesis.finalRecommendation,
       final_confidence: synthesis.finalConfidence,
+      current_price: currentPrice,
       target_price: synthesis.targetPrice,
       stop_loss: synthesis.stopLoss,
       time_horizon: synthesis.timeHorizon,
