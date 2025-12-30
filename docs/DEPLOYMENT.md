@@ -35,7 +35,45 @@ Supabase 대시보드에서:
    - `investment_opinions`
    - `news_articles`
 
-### 4. GitHub Secrets 설정
+### 4. Supabase Edge Functions Secrets 설정
+
+Edge Functions에서 사용하는 환경 변수를 Supabase에 설정해야 합니다.
+
+**설정 방법:**
+1. Supabase 대시보드에서 프로젝트 선택
+2. **Edge Functions** > **All Functions** 메뉴로 이동
+3. 각 Function을 클릭하여 **Secrets** 탭에서 환경 변수 추가
+
+**필요한 Secrets:**
+
+```bash
+# 모든 Edge Functions에 공통으로 필요
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_KEY=your-service-role-key
+
+# collect-news에 필요
+NAVER_CLIENT_ID=your-naver-client-id
+NAVER_CLIENT_SECRET=your-naver-client-secret
+
+# analyze-sentiment, collect-full-content, multi-agent-analysis에 필요
+OPENAI_API_KEY=sk-proj-your-openai-api-key
+```
+
+또는 Supabase CLI로 일괄 설정:
+```bash
+# 공통 환경 변수
+supabase secrets set SUPABASE_URL=https://your-project.supabase.co
+supabase secrets set SUPABASE_SERVICE_KEY=your-service-role-key
+
+# Naver API
+supabase secrets set NAVER_CLIENT_ID=your-naver-client-id
+supabase secrets set NAVER_CLIENT_SECRET=your-naver-client-secret
+
+# OpenAI API
+supabase secrets set OPENAI_API_KEY=sk-proj-your-openai-api-key
+```
+
+### 5. GitHub Secrets 설정
 
 GitHub 저장소 설정 > Secrets and variables > Actions에서 다음 secrets 추가:
 
@@ -43,12 +81,9 @@ GitHub 저장소 설정 > Secrets and variables > Actions에서 다음 secrets �
 
 ```
 SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SERVICE_KEY=your-service-role-key
+SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_ACCESS_TOKEN=your-supabase-access-token
 SUPABASE_PROJECT_REF=your-project-ref
-OPENAI_API_KEY=sk-proj-your-openai-api-key
-NAVER_CLIENT_ID=your-naver-client-id
-NAVER_CLIENT_SECRET=your-naver-client-secret
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
