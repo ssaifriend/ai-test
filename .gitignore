@@ -49,6 +49,7 @@ next-env.d.ts
 
 # Deno
 .deno/
+deno.lock
 
 # IDE
 .vscode/
