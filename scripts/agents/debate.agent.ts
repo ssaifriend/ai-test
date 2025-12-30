@@ -57,8 +57,8 @@ export function calculateConsensus(opinions: AgentOpinions): number {
   });
 
   // 가중 평균 계산
-  const weightedSum = scores.reduce((sum, score, i) => sum + score * weights[i], 0);
-  const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+  const weightedSum = scores.reduce((sum, score, i) => sum + score * weights[i], 0 as number);
+  const totalWeight = weights.reduce((sum, w) => sum + w, 0 as number);
 
   if (totalWeight === 0) {
     return 50; // 기본값
