@@ -2,7 +2,7 @@
 // 분석되지 않은 뉴스에 대해 배치 감성 분석을 수행하고 결과를 저장
 
 import { loadEnv } from "./utils/env.ts";
-import { createClient } from "supabase";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logError } from "./utils/error-handler.ts";
 import { batchAnalyzeSentiment, type NewsItemForAnalysis } from "./services/sentiment-analyzer.ts";
 

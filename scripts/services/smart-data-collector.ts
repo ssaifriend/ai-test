@@ -5,7 +5,7 @@
  * 캐싱을 통해 API 호출 비용을 절감합니다.
  */
 
-import { createClient } from "supabase";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { loadEnv } from "../utils/env.ts";
 import { logError } from "../utils/error-handler.ts";
 import { getCurrentPrice, getDailyChart } from "../utils/kis-api.ts";

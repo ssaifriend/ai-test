@@ -2,7 +2,7 @@
 // 모든 Agent를 실행하고 결과를 통합하여 최종 투자 의견을 생성
 
 import { loadEnv } from "./utils/env.ts";
-import { createClient } from "supabase";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logError } from "./utils/error-handler.ts";
 import { SmartDataCollector } from "./services/smart-data-collector.ts";
 import { runFundamentalAgent } from "./agents/fundamental.agent.ts";

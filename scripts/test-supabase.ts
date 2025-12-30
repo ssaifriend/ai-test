@@ -1,7 +1,7 @@
 // Supabase 연결 테스트 스크립트
 
 import { loadEnv } from "./utils/env.ts";
-import { createClient } from "supabase";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logError } from "./utils/error-handler.ts";
 
 async function testSupabase() {

@@ -2,7 +2,7 @@
 // 수집된 뉴스에 필터링을 적용하고 통계를 수집
 
 import { loadEnv } from "./utils/env.ts";
-import { createClient } from "supabase";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logError } from "./utils/error-handler.ts";
 import { filterBySource } from "./utils/source-filter.ts";
 import { removeDuplicates } from "./utils/deduplication.ts";

@@ -2,7 +2,7 @@
 // Naver News API를 사용하여 종목별 뉴스를 수집하고 Supabase에 저장
 
 import { loadEnv } from "./utils/env.ts";
-import { createClient } from "supabase";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logError } from "./utils/error-handler.ts";
 import type { NewsItem, NaverNewsResponse, NewsArticle } from "./types.ts";
 

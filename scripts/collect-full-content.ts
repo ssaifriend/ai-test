@@ -2,7 +2,7 @@
 // 필터링을 통과한 뉴스 중 중요도가 높은 뉴스의 원문을 수집하고 구조화
 
 import { loadEnv } from "./utils/env.ts";
-import { createClient } from "supabase";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logError } from "./utils/error-handler.ts";
 import { classifyImportance } from "./utils/importance-classifier.ts";
 import { crawlNewsContent } from "./services/news-crawler.ts";
