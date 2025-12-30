@@ -8,6 +8,8 @@
 import { createClient } from "supabase";
 import { loadEnv } from "../utils/env.ts";
 import { logError } from "../utils/error-handler.ts";
+import { getCurrentPrice, getDailyChart } from "../utils/kis-api.ts";
+import { calculateSMA, calculateRSI, calculateMACD } from "../utils/technical-indicators.ts";
 
 export interface FinancialData {
   per?: number;
@@ -204,9 +206,8 @@ export class SmartDataCollector {
       return { ...cached, cached: true, cachedAt: new Date().toISOString() };
     }
 
-    // 실제로는 외부 API 호출 (예: 한국투자증권 API 등)
-    // 현재는 기본값 반환
-    const technicalData: TechnicalData = {
+    // 기본 데이터 구조
+    let technicalData: TechnicalData = {
       price: 0,
       ma5: undefined,
       ma20: undefined,
@@ -216,6 +217,52 @@ export class SmartDataCollector {
       volume: undefined,
       cached: false,
     };
+
+    try {
+      const { kisAppKey, kisAppSecret } = loadEnv();
+
+      if (!kisAppKey || !kisAppSecret) {
+        console.log(`ℹ️  기술적 지표 수집: ${stockCode} - KIS API 키 설정 필요 (한국투자증권 OpenAPI에서 발급)`);
+        this.setCache(cacheKey, technicalData, CACHE_TTL.technical);
+        return technicalData;
+      }
+
+      // 1. 현재가 조회
+      const currentData = await getCurrentPrice(kisAppKey, kisAppSecret, stockCode);
+      technicalData.price = currentData.price;
+      technicalData.volume = currentData.volume;
+
+      // 2. 일봉 데이터 조회 (최근 100일)
+      const dailyChart = await getDailyChart(kisAppKey, kisAppSecret, stockCode, 100);
+
+      if (dailyChart.length === 0) {
+        console.log(`ℹ️  일봉 데이터 없음: ${stockCode}`);
+        this.setCache(cacheKey, technicalData, CACHE_TTL.technical);
+        return technicalData;
+      }
+
+      // 3. 종가 데이터 추출 (최신순)
+      const closePrices = dailyChart.map((item) => item.close);
+
+      // 4. 이동평균 계산
+      technicalData.ma5 = calculateSMA(closePrices, 5);
+      technicalData.ma20 = calculateSMA(closePrices, 20);
+      technicalData.ma60 = calculateSMA(closePrices, 60);
+
+      // 5. RSI 계산 (14일)
+      technicalData.rsi = calculateRSI(closePrices, 14);
+
+      // 6. MACD 계산 (12, 26, 9)
+      const macdResult = calculateMACD(closePrices, 12, 26, 9);
+      if (macdResult) {
+        technicalData.macd = macdResult.macd;
+      }
+
+      console.log(`✅ 기술적 지표 수집 완료: ${stockCode} (가격: ${technicalData.price})`);
+    } catch (error) {
+      logError(`❌ 기술적 지표 수집 실패 (${stockCode}):`, error);
+      // 에러 발생 시에도 기본 구조 반환하여 Agent가 정상 동작하도록 함
+    }
 
     this.setCache(cacheKey, technicalData, CACHE_TTL.technical);
     return technicalData;

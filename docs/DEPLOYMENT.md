@@ -57,7 +57,25 @@ NAVER_CLIENT_SECRET=your-naver-client-secret
 
 # analyze-sentiment, collect-full-content, multi-agent-analysis에 필요
 OPENAI_API_KEY=sk-proj-your-openai-api-key
+
+# multi-agent-analysis에 필요 (주가 데이터 수집)
+KIS_APP_KEY=your-kis-app-key
+KIS_APP_SECRET=your-kis-app-secret
 ```
+
+**API 키 발급 방법:**
+
+1. **네이버 API 키** (뉴스 수집)
+   - [네이버 개발자 센터](https://developers.naver.com/main/)에서 애플리케이션 등록
+   - 검색 API 사용 설정
+
+2. **OpenAI API 키** (감정 분석 및 Multi-Agent 분석)
+   - [OpenAI Platform](https://platform.openai.com/)에서 발급
+
+3. **한국투자증권 API 키** (주가 데이터)
+   - [KIS Developers](https://apiportal.koreainvestment.com/)에서 회원가입
+   - 모의투자 또는 실전투자 계좌 개설
+   - 앱 등록 후 APP_KEY와 APP_SECRET 발급
 
 또는 Supabase CLI로 일괄 설정:
 ```bash
@@ -71,6 +89,10 @@ supabase secrets set NAVER_CLIENT_SECRET=your-naver-client-secret
 
 # OpenAI API
 supabase secrets set OPENAI_API_KEY=sk-proj-your-openai-api-key
+
+# KIS API (한국투자증권)
+supabase secrets set KIS_APP_KEY=your-kis-app-key
+supabase secrets set KIS_APP_SECRET=your-kis-app-secret
 ```
 
 ### 5. GitHub Secrets 설정
