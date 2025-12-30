@@ -14,10 +14,11 @@ export interface MacroAgentResult extends AgentOpinion {
   agentName: "macro";
   analysis: {
     kospi?: number;
+    kospiChangeRate?: number;
     kosdaq?: number;
-    usdKrw?: number;
-    interestRate?: number;
-    marketTrend: "bullish" | "bearish" | "neutral";
+    kosdaqChangeRate?: number;
+    marketSentiment?: "bullish" | "bearish" | "neutral";
+    sectorTrend?: string;
     evaluation: string;
   };
 }
@@ -38,15 +39,15 @@ export async function runMacroAgent(
   const prompt = `당신은 한국 주식 시장의 거시경제 분석 전문가입니다. 현재 거시경제 지표를 분석하여 ${stockName} 종목에 대한 거시경제적 투자 의견을 제시하세요.
 
 거시경제 지표:
-${macroData.kospi !== undefined ? `- KOSPI: ${macroData.kospi.toLocaleString()}` : "- KOSPI: 데이터 없음"}
-${macroData.kosdaq !== undefined ? `- KOSDAQ: ${macroData.kosdaq.toLocaleString()}` : "- KOSDAQ: 데이터 없음"}
-${macroData.usdKrw !== undefined ? `- USD/KRW: ${macroData.usdKrw.toLocaleString()}원` : "- USD/KRW: 데이터 없음"}
-${macroData.interestRate !== undefined ? `- 기준금리: ${macroData.interestRate}%` : "- 기준금리: 데이터 없음"}
+${macroData.kospi !== undefined ? `- KOSPI: ${macroData.kospi.toLocaleString()} (${macroData.kospiChangeRate !== undefined ? (macroData.kospiChangeRate > 0 ? '+' : '') + macroData.kospiChangeRate.toFixed(2) + '%' : '변동률 없음'})` : "- KOSPI: 데이터 없음"}
+${macroData.kosdaq !== undefined ? `- KOSDAQ: ${macroData.kosdaq.toLocaleString()} (${macroData.kosdaqChangeRate !== undefined ? (macroData.kosdaqChangeRate > 0 ? '+' : '') + macroData.kosdaqChangeRate.toFixed(2) + '%' : '변동률 없음'})` : "- KOSDAQ: 데이터 없음"}
+${macroData.marketSentiment !== undefined ? `- 시장 분위기: ${macroData.marketSentiment === 'bullish' ? '강세장' : macroData.marketSentiment === 'bearish' ? '약세장' : '중립'}` : ""}
+${macroData.sectorTrend !== undefined ? `- 섹터 동향: ${macroData.sectorTrend}` : ""}
 
 분석 기준:
 1. 시장 지수 (KOSPI/KOSDAQ) 상승 추세면 긍정적
-2. 환율 상승은 수출 기업에 긍정적, 내수 기업에 부정적
-3. 금리 상승은 주식 시장에 부정적
+2. 시장 분위기가 강세장(bullish)이면 긍정적, 약세장(bearish)이면 부정적
+3. 종목의 업종과 섹터 동향을 고려
 4. 거시경제 전반의 흐름을 고려
 
 다음 JSON 형식으로 응답하세요:
@@ -111,10 +112,11 @@ JSON만 응답하고 다른 텍스트는 포함하지 마세요.`;
       reasoning: reasoning.slice(0, 5), // 최대 5개
       analysis: {
         kospi: macroData.kospi,
+        kospiChangeRate: macroData.kospiChangeRate,
         kosdaq: macroData.kosdaq,
-        usdKrw: macroData.usdKrw,
-        interestRate: macroData.interestRate,
-        marketTrend,
+        kosdaqChangeRate: macroData.kosdaqChangeRate,
+        marketSentiment: macroData.marketSentiment,
+        sectorTrend: macroData.sectorTrend,
         evaluation: parsed.evaluation || "거시경제 분석 완료",
       },
     };
@@ -129,10 +131,11 @@ JSON만 응답하고 다른 텍스트는 포함하지 마세요.`;
       reasoning: ["거시경제 데이터 부족으로 분석 불가"],
       analysis: {
         kospi: macroData.kospi,
+        kospiChangeRate: macroData.kospiChangeRate,
         kosdaq: macroData.kosdaq,
-        usdKrw: macroData.usdKrw,
-        interestRate: macroData.interestRate,
-        marketTrend: "neutral",
+        kosdaqChangeRate: macroData.kosdaqChangeRate,
+        marketSentiment: macroData.marketSentiment,
+        sectorTrend: macroData.sectorTrend,
         evaluation: "거시경제 데이터가 부족하여 정확한 분석이 어렵습니다.",
       },
     };
