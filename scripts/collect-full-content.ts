@@ -10,11 +10,12 @@ import { structureNewsContent } from "./services/news-structurizer.ts";
 
 /**
  * 시간대별 중요도 임계값
+ * 필터링을 통과한 뉴스 중 원문을 수집할 비율
  */
 const IMPORTANCE_THRESHOLDS = {
-  peak: 0.15, // 15% (15개 중 약 2-3개)
-  active: 0.10, // 10%
-  off: 0.05, // 5%
+  peak: 0.50, // 50% (필터링 통과한 뉴스의 절반)
+  active: 0.40, // 40%
+  off: 0.30, // 30%
 } as const;
 
 /**
@@ -88,15 +89,13 @@ export async function collectFullContentForStock(
   const threshold = IMPORTANCE_THRESHOLDS[timePeriod];
   const targetCount = Math.ceil(filteredNews.length * threshold);
 
-  // High 우선, 부족하면 Medium에서 보충
+  // High 전체 + Medium 중 일부 선정 (더 많은 뉴스 수집)
   const targetNews = [
-    ...highImportance.slice(0, targetCount),
-    ...(highImportance.length < targetCount
-      ? mediumImportance.slice(0, targetCount - highImportance.length)
-      : []),
+    ...highImportance, // High는 전체 포함
+    ...mediumImportance.slice(0, Math.max(0, targetCount - highImportance.length)), // 나머지는 Medium으로 채움
   ];
 
-  console.log(`\n📥 원문 수집 대상: ${targetNews.length}개 (임계값: ${(threshold * 100).toFixed(0)}%)\n`);
+  console.log(`\n📥 원문 수집 대상: ${targetNews.length}개 (임계값: ${(threshold * 100).toFixed(0)}%, High 전체 포함)\n`);
 
   if (targetNews.length === 0) {
     // 중요도만 업데이트하고 종료
