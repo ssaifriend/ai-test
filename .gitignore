@@ -61,6 +61,3 @@ deno.lock
 # Logs
 logs/
 *.log
-
-# 내부 문서 (비공개)
-docs

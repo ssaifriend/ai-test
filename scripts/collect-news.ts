@@ -99,8 +99,7 @@ async function main() {
       throw new Error("SUPABASE_SERVICE_KEY 환경 변수가 비어있습니다. GitHub Secrets를 확인하세요.");
     }
 
-    console.log(`🔗 Supabase URL: ${supabaseUrl.substring(0, 30)}...`);
-    console.log(`🔑 Service Key: ${supabaseServiceKey.substring(0, 20)}...\n`);
+    console.log(`🔗 Supabase 연결 확인 완료\n`);
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
