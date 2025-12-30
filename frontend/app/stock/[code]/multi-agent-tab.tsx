@@ -1,6 +1,5 @@
 "use client";
 
-import AgentOpinionCard from "../../../components/AgentOpinionCard";
 import type { InvestmentOpinion } from "../../../lib/types";
 
 interface MultiAgentTabProps {
@@ -8,45 +7,6 @@ interface MultiAgentTabProps {
 }
 
 export default function MultiAgentTab({ opinion }: MultiAgentTabProps) {
-  const agents = [
-    {
-      name: "fundamental",
-      recommendation: opinion.fundamental_rec,
-      confidence: opinion.fundamental_confidence,
-      reasoning: opinion.fundamental_reasoning,
-    },
-    {
-      name: "technical",
-      recommendation: opinion.technical_rec,
-      confidence: opinion.technical_confidence,
-      reasoning: opinion.technical_reasoning,
-    },
-    {
-      name: "news",
-      recommendation: opinion.news_rec,
-      confidence: opinion.news_confidence,
-      reasoning: opinion.news_reasoning,
-    },
-    {
-      name: "macro",
-      recommendation: opinion.macro_rec,
-      confidence: opinion.macro_confidence,
-      reasoning: opinion.macro_reasoning,
-    },
-    {
-      name: "risk",
-      recommendation: opinion.risk_rec,
-      confidence: opinion.risk_confidence,
-      reasoning: opinion.risk_reasoning,
-    },
-  ].filter(
-    (agent) =>
-      agent.recommendation &&
-      agent.confidence !== undefined &&
-      agent.reasoning &&
-      agent.reasoning.length > 0
-  );
-
   return (
     <div className="space-y-6">
       {/* 최종 의견 요약 */}
