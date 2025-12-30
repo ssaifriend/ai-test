@@ -11,7 +11,7 @@ export function loadEnv(): {
   kisAppSecret?: string;
 } {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_KEY");
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
   const naverClientId = Deno.env.get("NAVER_CLIENT_ID");
   const naverClientSecret = Deno.env.get("NAVER_CLIENT_SECRET");
@@ -23,7 +23,7 @@ export function loadEnv(): {
     throw new Error("SUPABASE_URL 환경 변수가 설정되지 않았습니다.");
   }
   if (!supabaseServiceKey) {
-    throw new Error("SUPABASE_SERVICE_KEY 환경 변수가 설정되지 않았습니다.");
+    throw new Error("SUPABASE_SERVICE_ROLE_KEY 환경 변수가 설정되지 않았습니다.");
   }
   if (!openaiApiKey) {
     throw new Error("OPENAI_API_KEY 환경 변수가 설정되지 않았습니다.");
