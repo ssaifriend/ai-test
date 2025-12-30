@@ -1,4 +1,5 @@
 import { supabase } from "../../../lib/supabase";
+import MultiAgentTab from "./multi-agent-tab";
 import RealtimeTrackerTab from "./realtime-tracker-tab";
 import NewsTab from "./news-tab";
 import AgentOpinions from "../../../components/AgentOpinions";
@@ -97,6 +98,16 @@ export default async function StockPage({ params }: PageProps) {
         {latestOpinion && (
           <>
             <div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                투자 의견 요약
+              </h2>
+              <MultiAgentTab opinion={latestOpinion} />
+            </div>
+
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                Agent별 상세 의견
+              </h2>
               <AgentOpinions opinion={latestOpinion} />
             </div>
 
