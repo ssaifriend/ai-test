@@ -84,8 +84,26 @@ export default function StockCard({ stock, latestOpinion }: StockCardProps) {
               </div>
             )}
             {latestOpinion.timestamp && (
-              <div className="text-xs text-gray-500 dark:text-gray-400">
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                 {new Date(latestOpinion.timestamp).toLocaleString("ko-KR")}
+              </div>
+            )}
+
+            {/* Agent 합의도 */}
+            {latestOpinion.consensus_level !== undefined && (
+              <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-gray-500 dark:text-gray-400">Agent 합의도</span>
+                  <span className={`font-semibold ${
+                    latestOpinion.consensus_level >= 70
+                      ? "text-green-600 dark:text-green-400"
+                      : latestOpinion.consensus_level >= 50
+                      ? "text-yellow-600 dark:text-yellow-400"
+                      : "text-red-600 dark:text-red-400"
+                  }`}>
+                    {latestOpinion.consensus_level}%
+                  </span>
+                </div>
               </div>
             )}
           </div>

@@ -63,6 +63,10 @@ export interface InvestmentOpinion {
   current_price?: number;
   target_price?: number;
   stop_loss?: number;
+  fundamental_target_price?: number;
+  fundamental_stop_loss?: number;
+  technical_target_price?: number;
+  technical_stop_loss?: number;
   time_horizon?: string;
   strategy?: string;
   key_reasons?: string[];

@@ -2,6 +2,7 @@ import { supabase } from "../../../lib/supabase";
 import MultiAgentTab from "./multi-agent-tab";
 import RealtimeTrackerTab from "./realtime-tracker-tab";
 import NewsTab from "./news-tab";
+import AgentOpinions from "../../../components/AgentOpinions";
 import type { Stock, InvestmentOpinion, NewsArticle } from "../../../lib/types";
 
 // Force dynamic rendering (no static generation)
@@ -101,6 +102,10 @@ export default async function StockPage({ params }: PageProps) {
                 Multi-Agent 분석
               </h2>
               <MultiAgentTab opinion={latestOpinion} />
+            </div>
+
+            <div>
+              <AgentOpinions opinion={latestOpinion} />
             </div>
 
             <div>
