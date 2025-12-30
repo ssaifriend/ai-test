@@ -32,11 +32,11 @@ function jaccardSimilarity(set1: Set<string>, set2: Set<string>): number {
 
 /**
  * 뉴스 제목 기반 중복 제거
- * 임계값 80% 이상 유사하면 중복으로 판단
+ * 임계값 90% 이상 유사하면 중복으로 판단 (완화됨)
  */
 export function removeDuplicates(
   news: NewsArticle[],
-  threshold: number = 0.8
+  threshold: number = 0.9
 ): {
   unique: NewsArticle[];
   duplicates: NewsArticle[];

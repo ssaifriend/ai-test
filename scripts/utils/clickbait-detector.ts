@@ -3,42 +3,34 @@
 import type { NewsArticle } from "../types.ts";
 
 /**
- * 클릭베이트 패턴 정의
+ * 클릭베이트 패턴 정의 (보수적으로 조정)
  */
 const CLICKBAIT_PATTERNS = [
-  /속보/,
-  /충격/,
-  /긴급/,
-  /대박/,
-  /!\s*$/,
-  /[?!]{2,}/,
-  /주목|화제|폭발/,
-  /놀라운|믿을 수 없는/,
-  /이것만 알면/,
-  /숨겨진 진실/,
+  /충격/, // "충격" 키워드
+  /대박/, // "대박" 키워드
+  /[?!]{3,}/, // 물음표나 느낌표 3개 이상
+  /믿을 수 없는/, // "믿을 수 없는" 키워드
+  /이것만 알면/, // "이것만 알면" 키워드
+  /숨겨진 진실/, // "숨겨진 진실" 키워드
+  /클릭/, // "클릭" 키워드
 ];
 
 /**
- * 저품질 뉴스 지표
+ * 저품질 뉴스 지표 (완화됨)
  */
 function isLowQuality(news: NewsArticle): boolean {
-  // 설명이 너무 짧음
-  if (news.description && news.description.length < 50) {
+  // 설명이 너무 짧음 (30자 미만)
+  if (news.description && news.description.length < 30) {
     return true;
   }
 
-  // 네티즌 반응 기사
-  if (news.title.match(/네티즌|댓글|반응|누리꾼/)) {
+  // 네티즌 반응 중심 기사 (제목에 명확히 드러나는 경우만)
+  if (news.title.match(/네티즌 반응|댓글 폭발|누리꾼 분노/)) {
     return true;
   }
 
-  // 추측성 표현
-  if (news.title.match(/것으로 보인다|것으로 추정|것으로 전망/)) {
-    return true;
-  }
-
-  // 익명 출처
-  if (news.description?.match(/관계자에 따르면|익명의 관계자/)) {
+  // 제목이 너무 짧거나 너무 긺
+  if (news.title.length < 10 || news.title.length > 150) {
     return true;
   }
 
