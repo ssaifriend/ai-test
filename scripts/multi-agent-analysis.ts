@@ -85,7 +85,7 @@ export async function runMultiAgentAnalysis(
 
     // 4. Synthesis Agent 실행
     console.log("🔮 최종 의견 종합 중...");
-    const synthesis = await runSynthesisAgent(stockName, stockCode, opinions, debateResult, stockId);
+    const synthesis = await runSynthesisAgent(stockName, stockCode, opinions, debateResult, stockId, currentPrice);
     console.log(`  ✅ 최종 의견: ${synthesis.finalRecommendation} (${synthesis.finalConfidence}%)`);
     console.log(`  📊 모델: ${synthesis.synthesisModel}\n`);
 
