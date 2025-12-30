@@ -18,16 +18,16 @@ serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_KEY")!;
+    const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    if (!supabaseUrl || !supabaseServiceKey) {
+    if (!supabaseUrl || !supabaseServiceRoleKey) {
       throw new Error("필수 환경 변수가 설정되지 않았습니다.");
     }
 
     Deno.env.set("SUPABASE_URL", supabaseUrl);
-    Deno.env.set("SUPABASE_SERVICE_KEY", supabaseServiceKey);
+    Deno.env.set("SUPABASE_SERVICE_ROLE_KEY", supabaseServiceRoleKey);
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
     // 활성화된 종목 조회
     const { data: stocks, error: stocksError } = await supabase

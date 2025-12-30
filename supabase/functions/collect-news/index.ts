@@ -21,15 +21,15 @@ serve(async (req) => {
   try {
     // Supabase 클라이언트 생성 (Edge Functions에서는 자동으로 제공됨)
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_KEY")!;
+    const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const naverClientId = Deno.env.get("NAVER_CLIENT_ID")!;
     const naverClientSecret = Deno.env.get("NAVER_CLIENT_SECRET")!;
 
-    if (!supabaseUrl || !supabaseServiceKey || !naverClientId || !naverClientSecret) {
+    if (!supabaseUrl || !supabaseServiceRoleKey || !naverClientId || !naverClientSecret) {
       throw new Error("필수 환경 변수가 설정되지 않았습니다.");
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
     // 활성화된 종목 조회
     const { data: stocks, error: stocksError } = await supabase
