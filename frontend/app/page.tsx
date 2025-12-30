@@ -4,6 +4,10 @@ import FilteringStatsPanel from "../components/FilteringStatsPanel";
 import type { Stock, InvestmentOpinion } from "../lib/types";
 import type { FilteringStats } from "../components/FilteringStatsPanel";
 
+// Force dynamic rendering (no static generation)
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 async function getFilteringStats() {
   const { data: stats } = await supabase
     .from("filtering_stats")

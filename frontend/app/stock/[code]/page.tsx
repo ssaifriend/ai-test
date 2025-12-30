@@ -4,6 +4,10 @@ import RealtimeTrackerTab from "./realtime-tracker-tab";
 import NewsTab from "./news-tab";
 import type { Stock, InvestmentOpinion, NewsArticle } from "../../../lib/types";
 
+// Force dynamic rendering (no static generation)
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 interface PageProps {
   params: Promise<{ code: string }>;
 }
