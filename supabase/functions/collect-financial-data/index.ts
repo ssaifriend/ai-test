@@ -27,10 +27,10 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
-    // 활성화된 종목 조회
+    // 활성화된 종목 조회 (corp_code 포함)
     const { data: stocks, error: stocksError } = await supabase
       .from("stocks")
-      .select("id, code, name")
+      .select("id, code, name, corp_code")
       .eq("is_active", true);
 
     if (stocksError) {
@@ -52,16 +52,30 @@ serve(async (req) => {
         let financialData: any = {};
         let dataSource = "unknown";
 
-        // 1. DART API로 재무제표 데이터 수집
-        if (dartApiKey) {
-          const dartData = await fetchDARTFinancialData(stock.code, dartApiKey);
+        // 1. 법인코드가 없으면 DART에서 조회하여 저장
+        let corpCode = stock.corp_code;
+        if (dartApiKey && !corpCode) {
+          corpCode = await fetchCorpCode(stock.code, dartApiKey);
+          if (corpCode) {
+            // 법인코드를 stocks 테이블에 저장
+            await supabase
+              .from("stocks")
+              .update({ corp_code: corpCode })
+              .eq("id", stock.id);
+            console.log(`✓ 법인코드 저장 완료 (${stock.name}): ${corpCode}`);
+          }
+        }
+
+        // 2. DART API로 재무제표 데이터 수집
+        if (dartApiKey && corpCode) {
+          const dartData = await fetchDARTFinancialData(corpCode, dartApiKey);
           if (dartData) {
             financialData = { ...financialData, ...dartData };
             dataSource = "dart";
           }
         }
 
-        // 2. 네이버 금융에서 PER/PBR 등 시장 지표 수집
+        // 3. 네이버 금융에서 PER/PBR 등 시장 지표 수집
         const naverData = await fetchNaverFinanceData(stock.code);
         if (naverData) {
           financialData = { ...financialData, ...naverData };
@@ -72,7 +86,7 @@ serve(async (req) => {
           }
         }
 
-        // 3. 데이터베이스에 저장 (upsert)
+        // 4. 데이터베이스에 저장 (upsert)
         if (Object.keys(financialData).length > 0) {
           const { error: upsertError } = await supabase
             .from("financial_data")
@@ -128,18 +142,148 @@ serve(async (req) => {
 });
 
 /**
- * DART API를 통한 재무제표 데이터 수집
- * DART는 종목코드가 아닌 고유 법인코드(corp_code)가 필요하므로 스킵
- * 대신 네이버 금융에서 모든 데이터 수집
+ * DART에서 종목코드로 법인코드 조회
+ * DART 공시업체 목록 조회 API 사용
  */
-async function fetchDARTFinancialData(
+async function fetchCorpCode(
   stockCode: string,
   apiKey: string
+): Promise<string | null> {
+  try {
+    // DART 고유번호 조회 API (corpCode.xml)
+    const url = `https://opendart.fss.or.kr/api/corpCode.xml?crtfc_key=${apiKey}`;
+
+    const response = await fetch(url);
+    if (!response.ok) {
+      console.log(`DART 법인코드 조회 실패 (${stockCode}): HTTP ${response.status}`);
+      return null;
+    }
+
+    const xml = await response.text();
+
+    // XML에서 stock_code와 매칭되는 corp_code 찾기
+    // 형식: <list><corp_code>00126380</corp_code><corp_name>삼성전자</corp_name><stock_code>005930</stock_code>...
+    const regex = new RegExp(
+      `<corp_code>([^<]+)</corp_code>[^<]*<corp_name>[^<]*</corp_name>[^<]*<stock_code>${stockCode}</stock_code>`,
+      "i"
+    );
+    const match = xml.match(regex);
+
+    if (match && match[1]) {
+      console.log(`✓ 법인코드 조회 성공 (${stockCode}): ${match[1]}`);
+      return match[1];
+    }
+
+    console.log(`⚠️  법인코드 없음 (${stockCode})`);
+    return null;
+  } catch (error) {
+    console.error(`DART 법인코드 조회 실패 (${stockCode}):`, error);
+    return null;
+  }
+}
+
+/**
+ * DART API를 통한 재무제표 데이터 수집
+ * 최신 사업보고서 또는 분기보고서에서 재무 데이터 추출
+ */
+async function fetchDARTFinancialData(
+  corpCode: string,
+  apiKey: string
 ): Promise<any | null> {
-  // DART API는 법인코드 매핑 테이블이 필요하므로 현재는 스킵
-  // 향후 개선: corp_code 매핑 테이블 구축
-  console.log(`DART API 스킵 (법인코드 매핑 필요): ${stockCode}`);
-  return null;
+  try {
+    // 현재 연도와 분기 계산
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+
+    // 최근 4개 분기 시도 (가장 최근 보고서 찾기)
+    const quarters = [];
+    for (let i = 0; i < 4; i++) {
+      const targetDate = new Date(year, month - 1 - i * 3, 1);
+      const y = targetDate.getFullYear();
+      const m = targetDate.getMonth() + 1;
+      const q = Math.ceil(m / 3);
+      quarters.push({ year: y, quarter: q });
+    }
+
+    // 단일회사 주요계정 조회 API
+    for (const { year: bsnsYear, quarter } of quarters) {
+      try {
+        const reprtCode = quarter === 4 ? "11011" : `1101${quarter}`; // 11011=사업보고서, 11012=반기, 11013=1분기, 11014=3분기
+
+        const url = `https://opendart.fss.or.kr/api/fnlttSinglAcntAll.json?crtfc_key=${apiKey}&corp_code=${corpCode}&bsns_year=${bsnsYear}&reprt_code=${reprtCode}&fs_div=CFS`;
+
+        const response = await fetch(url);
+        if (!response.ok) continue;
+
+        const data = await response.json();
+
+        if (data.status === "000" && data.list && data.list.length > 0) {
+          // 주요 계정과목 추출
+          const financialData: any = {};
+
+          for (const item of data.list) {
+            const accountName = item.account_nm;
+            const value = parseInt(item.thstrm_amount || "0");
+
+            // 매출액
+            if (accountName.includes("매출액") && !accountName.includes("영업")) {
+              financialData.revenue = value;
+            }
+            // 영업이익
+            if (accountName.includes("영업이익")) {
+              financialData.operatingProfit = value;
+            }
+            // 당기순이익
+            if (accountName.includes("당기순이익") && accountName.includes("지배")) {
+              financialData.netProfit = value;
+            }
+            // 부채총계
+            if (accountName === "부채총계") {
+              financialData.totalLiabilities = value;
+            }
+            // 자본총계
+            if (accountName === "자본총계") {
+              financialData.totalEquity = value;
+            }
+            // 유동자산
+            if (accountName === "유동자산") {
+              financialData.currentAssets = value;
+            }
+            // 유동부채
+            if (accountName === "유동부채") {
+              financialData.currentLiabilities = value;
+            }
+          }
+
+          // 비율 계산
+          if (financialData.totalLiabilities && financialData.totalEquity) {
+            financialData.debtRatio = (financialData.totalLiabilities / financialData.totalEquity) * 100;
+          }
+          if (financialData.currentAssets && financialData.currentLiabilities) {
+            financialData.currentRatio = (financialData.currentAssets / financialData.currentLiabilities) * 100;
+          }
+          if (financialData.netProfit && financialData.totalEquity) {
+            financialData.roe = (financialData.netProfit / financialData.totalEquity) * 100;
+          }
+
+          if (Object.keys(financialData).length > 0) {
+            console.log(`✓ DART 재무 데이터 수집 성공 (${corpCode}, ${bsnsYear}Q${quarter}):`, Object.keys(financialData).join(", "));
+            return financialData;
+          }
+        }
+      } catch (quarterError) {
+        // 해당 분기 실패 시 다음 분기 시도
+        continue;
+      }
+    }
+
+    console.log(`⚠️  DART 재무 데이터 없음 (${corpCode})`);
+    return null;
+  } catch (error) {
+    console.error(`DART 재무 데이터 수집 실패 (${corpCode}):`, error);
+    return null;
+  }
 }
 
 /**

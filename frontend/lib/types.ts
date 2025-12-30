@@ -7,6 +7,7 @@ export interface Stock {
   market: "KOSPI" | "KOSDAQ";
   sector?: string;
   is_active: boolean;
+  corp_code?: string;
   created_at: string;
   updated_at: string;
 }
