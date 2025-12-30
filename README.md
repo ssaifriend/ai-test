@@ -80,12 +80,30 @@ cp .env.local.example .env.local
 
 **필요한 환경 변수:**
 - `SUPABASE_URL`: Supabase 프로젝트 URL
+  - Supabase Dashboard → Settings → API → Project URL
 - `SUPABASE_SERVICE_KEY`: Supabase Service Role Key (서버 사이드 전용)
+  - Supabase Dashboard → Settings → API → service_role key (⚠️ 절대 공개하지 마세요)
 - `NEXT_PUBLIC_SUPABASE_URL`: Supabase 프로젝트 URL (클라이언트용)
+  - `SUPABASE_URL`과 동일한 값
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase Anon Key (클라이언트용)
+  - Supabase Dashboard → Settings → API → anon public key
 - `OPENAI_API_KEY`: OpenAI API 키
+  - https://platform.openai.com/api-keys
 - `NAVER_CLIENT_ID`: Naver API 클라이언트 ID
+  - https://developers.naver.com/apps
 - `NAVER_CLIENT_SECRET`: Naver API 클라이언트 Secret
+
+**⚠️ Vercel 배포 시 환경 변수 설정 (중요!)**
+
+프론트엔드가 Vercel에 배포되어 있다면, Vercel Dashboard에서 환경 변수를 설정해야 합니다:
+
+1. [Vercel Dashboard](https://vercel.com/dashboard) 로그인
+2. 프로젝트 선택 → **Settings** → **Environment Variables**
+3. 다음 환경 변수 추가:
+   - `NEXT_PUBLIC_SUPABASE_URL`: Supabase 프로젝트 URL
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase Anon Key
+4. **Save** 클릭
+5. **Deployments** 탭 → 최신 배포 선택 → **Redeploy** 클릭
 
 3. **Frontend 의존성 설치**
 ```bash
