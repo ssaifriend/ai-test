@@ -25,10 +25,6 @@ serve(async (req) => {
       throw new Error("필수 환경 변수가 설정되지 않았습니다.");
     }
 
-    Deno.env.set("SUPABASE_URL", supabaseUrl);
-    Deno.env.set("SUPABASE_SERVICE_ROLE_KEY", supabaseServiceRoleKey);
-    Deno.env.set("OPENAI_API_KEY", openaiApiKey);
-
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
     // 활성화된 종목 조회
