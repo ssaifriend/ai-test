@@ -3,34 +3,18 @@
 import type { NewsArticle } from "../types.ts";
 
 /**
- * 클릭베이트 패턴 정의 (보수적으로 조정)
+ * 클릭베이트 패턴 정의 (극도로 완화 - 최소한만 필터링)
  */
 const CLICKBAIT_PATTERNS = [
-  /충격/, // "충격" 키워드
-  /대박/, // "대박" 키워드
-  /[?!]{3,}/, // 물음표나 느낌표 3개 이상
-  /믿을 수 없는/, // "믿을 수 없는" 키워드
-  /이것만 알면/, // "이것만 알면" 키워드
-  /숨겨진 진실/, // "숨겨진 진실" 키워드
-  /클릭/, // "클릭" 키워드
+  /[?!]{5,}/, // 물음표나 느낌표 5개 이상만 필터링
 ];
 
 /**
- * 저품질 뉴스 지표 (완화됨)
+ * 저품질 뉴스 지표 (극도로 완화 - 거의 필터링 안함)
  */
 function isLowQuality(news: NewsArticle): boolean {
-  // 설명이 너무 짧음 (30자 미만)
-  if (news.description && news.description.length < 30) {
-    return true;
-  }
-
-  // 네티즌 반응 중심 기사 (제목에 명확히 드러나는 경우만)
-  if (news.title.match(/네티즌 반응|댓글 폭발|누리꾼 분노/)) {
-    return true;
-  }
-
-  // 제목이 너무 짧거나 너무 긺
-  if (news.title.length < 10 || news.title.length > 150) {
+  // 제목이 극도로 짧은 경우만 (5자 미만)
+  if (news.title.length < 5) {
     return true;
   }
 

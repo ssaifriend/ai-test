@@ -51,35 +51,17 @@ export function filterBySource(news: NewsArticle[]): {
   };
 
   for (const item of news) {
-    if (!item.source) {
-      filtered.push(item);
-      stats.filtered++;
-      continue;
-    }
-
-    // 제외 언론사 체크
-    const excludedSources = EXCLUDED_SOURCES as readonly string[];
-    if (excludedSources.includes(item.source)) {
-      filtered.push(item);
-      stats.filtered++;
-      continue;
-    }
-
-    // 화이트리스트 체크
-    const tier = getSourceTier(item.source);
-    if (tier === null) {
-      filtered.push(item);
-      stats.filtered++;
-      continue;
-    }
-
-    // 통과
+    // 언론사 필터 완전히 비활성화 - 모든 뉴스 통과
     passed.push(item);
     stats.passed++;
 
-    if (tier === 1) stats.tier1++;
-    else if (tier === 2) stats.tier2++;
-    else if (tier === 3) stats.tier3++;
+    // 통계용으로만 tier 계산
+    if (item.source) {
+      const tier = getSourceTier(item.source);
+      if (tier === 1) stats.tier1++;
+      else if (tier === 2) stats.tier2++;
+      else if (tier === 3) stats.tier3++;
+    }
   }
 
   return { passed, filtered, stats };
