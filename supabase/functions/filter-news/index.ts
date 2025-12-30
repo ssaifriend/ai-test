@@ -7,6 +7,8 @@ import { runFilteringPipeline } from "../../../scripts/filter-news.ts";
 
 serve(async (req) => {
   const corsHeaders = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   };
 
   // Handle CORS preflight
@@ -14,10 +16,7 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  };
-
+  try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_KEY")!;
 
@@ -73,4 +72,3 @@ serve(async (req) => {
     );
   }
 });
-
