@@ -1,10 +1,16 @@
-name: CI/CD
+name: Deploy Frontend
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/deploy-frontend.yml"
   pull_request:
-    branches: [main, develop]
+    branches: [main]
+    paths:
+      - "frontend/**"
+  workflow_dispatch:
 
 jobs:
   lint-and-type-check:
@@ -39,10 +45,11 @@ jobs:
         working-directory: ./frontend
         run: yarn type-check
 
-  build-frontend:
-    name: Build Frontend
+  build-and-deploy:
+    name: Build & Deploy
     runs-on: ubuntu-latest
     needs: lint-and-type-check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
       - name: Checkout code
@@ -80,51 +87,3 @@ jobs:
           working-directory: ./frontend
           vercel-args: --prod
           scope: ${{ secrets.VERCEL_ORG_ID }}
-
-  test-scripts:
-    name: Test Deno Scripts
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Deno
-        uses: denoland/setup-deno@v1
-        with:
-          deno-version: v1.40.0
-
-      - name: Check scripts syntax
-        run: |
-          # Utils
-          deno check scripts/utils/env.ts
-          deno check scripts/utils/error-handler.ts
-          deno check scripts/utils/kis-api.ts
-          deno check scripts/utils/technical-indicators.ts
-
-          # Core types
-          deno check scripts/types.ts
-
-          # Main scripts
-          deno check scripts/collect-news.ts
-          deno check scripts/filter-news.ts
-          deno check scripts/analyze-sentiment.ts
-          deno check scripts/collect-full-content.ts
-          deno check scripts/multi-agent-analysis.ts
-
-          # Services
-          deno check scripts/services/smart-data-collector.ts
-          deno check scripts/services/sentiment-analyzer.ts
-
-          # Agents
-          deno check scripts/agents/fundamental.agent.ts
-          deno check scripts/agents/technical.agent.ts
-          deno check scripts/agents/news.agent.ts
-          deno check scripts/agents/macro.agent.ts
-          deno check scripts/agents/risk.agent.ts
-          deno check scripts/agents/synthesis.agent.ts
-
-          # Test scripts
-          deno check scripts/test-openai.ts
-          deno check scripts/test-naver.ts
-          deno check scripts/test-supabase.ts
