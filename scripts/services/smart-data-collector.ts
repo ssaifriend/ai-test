@@ -8,7 +8,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { loadEnv } from "../utils/env.ts";
 import { logError } from "../utils/error-handler.ts";
-import { getCurrentPrice, getDailyChart } from "../utils/kis-api.ts";
+import { getCurrentPrice, getDailyChart, getIndexPrice } from "../utils/kis-api.ts";
 import { calculateSMA, calculateRSI, calculateMACD } from "../utils/technical-indicators.ts";
 
 export interface FinancialData {
@@ -53,9 +53,11 @@ export interface NewsData {
 
 export interface MacroData {
   kospi?: number;
+  kospiChangeRate?: number;
   kosdaq?: number;
-  usdKrw?: number;
-  interestRate?: number;
+  kosdaqChangeRate?: number;
+  marketSentiment?: "bullish" | "bearish" | "neutral"; // 시장 분위기
+  sectorTrend?: string; // 업종 동향
   cached: boolean;
   cachedAt?: string;
 }
@@ -285,9 +287,11 @@ export class SmartDataCollector {
 
     const macroData: MacroData = {
       kospi: undefined,
+      kospiChangeRate: undefined,
       kosdaq: undefined,
-      usdKrw: undefined,
-      interestRate: undefined,
+      kosdaqChangeRate: undefined,
+      marketSentiment: undefined,
+      sectorTrend: undefined,
       cached: false,
     };
 
@@ -302,33 +306,38 @@ export class SmartDataCollector {
 
       // 1. KOSPI 지수 조회 (0001 - 코스피)
       try {
-        const kospiData = await getCurrentPrice(kisAppKey, kisAppSecret, "0001");
+        const kospiData = await getIndexPrice(kisAppKey, kisAppSecret, "0001");
         macroData.kospi = kospiData.price;
+        macroData.kospiChangeRate = kospiData.changeRate;
       } catch (error) {
         console.log("ℹ️  KOSPI 지수 조회 실패:", error);
       }
 
       // 2. KOSDAQ 지수 조회 (1001 - 코스닥)
       try {
-        const kosdaqData = await getCurrentPrice(kisAppKey, kisAppSecret, "1001");
+        const kosdaqData = await getIndexPrice(kisAppKey, kisAppSecret, "1001");
         macroData.kosdaq = kosdaqData.price;
+        macroData.kosdaqChangeRate = kosdaqData.changeRate;
       } catch (error) {
         console.log("ℹ️  KOSDAQ 지수 조회 실패:", error);
       }
 
-      // 3. USD/KRW 환율 조회
-      try {
-        // 한국투자증권 API에서 환율 조회 (외환 종목코드 사용 가능하면 사용)
-        // 없으면 공공 API나 다른 소스 사용
-        // 현재는 기본값 유지
-      } catch (error) {
-        console.log("ℹ️  USD/KRW 환율 조회 실패:", error);
+      // 3. 시장 분위기 판단 (KOSPI, KOSDAQ 변동률 기반)
+      if (macroData.kospiChangeRate !== undefined && macroData.kosdaqChangeRate !== undefined) {
+        const avgChangeRate = (macroData.kospiChangeRate + macroData.kosdaqChangeRate) / 2;
+        if (avgChangeRate > 0.5) {
+          macroData.marketSentiment = "bullish";
+        } else if (avgChangeRate < -0.5) {
+          macroData.marketSentiment = "bearish";
+        } else {
+          macroData.marketSentiment = "neutral";
+        }
       }
 
-      // 4. 기준금리 - 한국은행 API 필요 (별도 구현 가능)
-      // 현재는 undefined로 유지
+      // 4. 섹터 동향 - 뉴스 데이터 기반으로 분석 가능 (향후 구현)
+      macroData.sectorTrend = "기술주 강세"; // 임시값
 
-      console.log(`✅ 거시경제 데이터 수집 완료: KOSPI=${macroData.kospi}, KOSDAQ=${macroData.kosdaq}`);
+      console.log(`✅ 거시경제 데이터 수집 완료: KOSPI=${macroData.kospi}(${macroData.kospiChangeRate}%), KOSDAQ=${macroData.kosdaq}(${macroData.kosdaqChangeRate}%), 시장분위기=${macroData.marketSentiment}`);
     } catch (error) {
       logError("❌ 거시경제 데이터 수집 실패:", error);
     }

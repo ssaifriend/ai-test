@@ -186,6 +186,57 @@ export async function getDailyChart(
 }
 
 /**
+ * 지수 현재가 조회 (KOSPI, KOSDAQ 등)
+ */
+export async function getIndexPrice(
+  appKey: string,
+  appSecret: string,
+  indexCode: string
+): Promise<{
+  price: number;
+  changeRate: number;
+}> {
+  const token = await getKISToken(appKey, appSecret);
+
+  try {
+    const url = new URL("https://openapi.koreainvestment.com:9443/uapi/domestic-stock/v1/quotations/inquire-index-price");
+    url.searchParams.set("FID_COND_MRKT_DIV_CODE", "U"); // 업종
+    url.searchParams.set("FID_INPUT_ISCD", indexCode);
+
+    const response = await fetch(url.toString(), {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "authorization": `Bearer ${token}`,
+        "appkey": appKey,
+        "appsecret": appSecret,
+        "tr_id": "FHPUP02100000", // 업종현재가 시세
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`지수 조회 실패: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    if (data.rt_cd !== "0") {
+      throw new Error(`API 오류: ${data.msg1}`);
+    }
+
+    const output = data.output;
+
+    return {
+      price: parseFloat(output.bstp_nmix_prpr || output.bstp_nmix_prdy_vrss || "0"), // 지수 현재가
+      changeRate: parseFloat(output.bstp_nmix_prdy_ctrt || "0"), // 전일 대비율
+    };
+  } catch (error) {
+    logError(`지수 조회 실패 (${indexCode}):`, error);
+    throw error;
+  }
+}
+
+/**
  * API 호출 간 딜레이 (Rate Limit 방지)
  * KIS API 제한: 초당 20건
  */
