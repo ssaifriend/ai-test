@@ -111,3 +111,9 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           supabase functions deploy multi-agent-analysis --no-verify-jwt
+
+      - name: Deploy collect-financial-data function
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase functions deploy collect-financial-data --no-verify-jwt

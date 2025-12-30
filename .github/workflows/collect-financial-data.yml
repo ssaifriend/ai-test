@@ -17,18 +17,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Deno
-        uses: denoland/setup-deno@v1
-        with:
-          deno-version: v1.40.0
-
-      - name: Collect financial data
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-          DART_API_KEY: ${{ secrets.DART_API_KEY }}
+      - name: Call Supabase Edge Function
         run: |
-          deno run --allow-net --allow-env --allow-read scripts/collect-financial-data.ts
+          curl -X POST "${{ secrets.SUPABASE_URL }}/functions/v1/collect-financial-data" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json"
