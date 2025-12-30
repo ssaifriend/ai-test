@@ -1,19 +1,8 @@
-// Edge runtime polyfill: define MessagePort/MessageChannel if absent
-if (typeof (globalThis as any).MessagePort === "undefined") {
-  class _MessagePort {}
-  (globalThis as any).MessagePort = _MessagePort;
-  (globalThis as any).MessageChannel = class {
-    port1 = new _MessagePort();
-    port2 = new _MessagePort();
-    close() {}
-  };
-}
-
 // Supabase Edge Function: 원문 수집 및 구조화
 // 필터링을 통과한 뉴스 중 중요도가 높은 뉴스의 원문을 수집하고 구조화
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2?target=deno";
 import { collectFullContentForStock } from "../../../scripts/collect-full-content.ts";
 
 serve(async (req) => {

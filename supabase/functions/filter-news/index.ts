@@ -2,7 +2,7 @@
 // 수집된 뉴스에 필터링을 적용하고 통계를 수집
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2?target=deno";
 import { runFilteringPipeline } from "../../../scripts/filter-news.ts";
 
 serve(async (req) => {

@@ -2,7 +2,7 @@
 // Naver News API를 사용하여 종목별 뉴스를 수집하고 Supabase에 저장
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2?target=deno";
 
 // scripts의 함수들을 import
 import { collectNewsForStock } from "../../../scripts/collect-news.ts";

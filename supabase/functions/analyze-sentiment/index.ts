@@ -2,7 +2,7 @@
 // 분석되지 않은 뉴스에 대해 배치 감성 분석을 수행하고 결과를 저장
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2?target=deno";
 import { analyzeSentimentForStock } from "../../../scripts/analyze-sentiment.ts";
 
 serve(async (req) => {
