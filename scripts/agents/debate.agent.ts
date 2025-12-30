@@ -5,7 +5,7 @@
  * 합의도가 70% 미만일 때만 토론을 진행합니다.
  */
 
-import OpenAI from "npm:openai@4";
+import { createChatCompletion } from "../utils/openai-helper.ts";
 import { loadEnv } from "../utils/env.ts";
 import { logError } from "../utils/error-handler.ts";
 import type { AgentOpinion } from "./fundamental.agent.ts";

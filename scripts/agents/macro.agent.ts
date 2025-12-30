@@ -5,7 +5,7 @@
  * 종목에 대한 거시경제적 투자 의견을 제시합니다.
  */
 
-import OpenAI from "npm:openai@4";
+import { createChatCompletion } from "../utils/openai-helper.ts";
 import { loadEnv } from "../utils/env.ts";
 import { logError } from "../utils/error-handler.ts";
 import { SmartDataCollector, type MacroData } from "../services/smart-data-collector.ts";

@@ -5,7 +5,7 @@
  * 종목에 대한 뉴스 기반 투자 의견을 제시합니다.
  */
 
-import OpenAI from "npm:openai@4";
+import { createChatCompletion } from "../utils/openai-helper.ts";
 import { loadEnv } from "../utils/env.ts";
 import { logError } from "../utils/error-handler.ts";
 import { SmartDataCollector, type NewsData } from "../services/smart-data-collector.ts";

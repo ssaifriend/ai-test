@@ -5,7 +5,7 @@
  * 조건부 모델 선택: GPT-4o-mini (80%) / GPT-4o (20%)
  */
 
-import OpenAI from "npm:openai@4";
+import { createChatCompletion } from "../utils/openai-helper.ts";
 import { loadEnv } from "../utils/env.ts";
 import { logError } from "../utils/error-handler.ts";
 import type { AgentOpinions } from "./debate.agent.ts";

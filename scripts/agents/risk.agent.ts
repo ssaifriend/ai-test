@@ -5,7 +5,7 @@
  * 투자 시 고려해야 할 리스크 요소를 평가합니다.
  */
 
-import OpenAI from "npm:openai@4";
+import { createChatCompletion } from "../utils/openai-helper.ts";
 import { loadEnv } from "../utils/env.ts";
 import { logError } from "../utils/error-handler.ts";
 import { SmartDataCollector, type RiskData } from "../services/smart-data-collector.ts";
