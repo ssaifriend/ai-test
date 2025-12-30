@@ -5,7 +5,7 @@
  * Naver 뉴스의 경우 `#newsct_article` 셀렉터를 사용하여 본문을 추출합니다.
  */
 
-import { parseHTML } from "https://esm.sh/linkedom@0.17.0?target=deno";
+import { DOMParser } from "https://deno.land/x/deno_dom/deno-dom-wasm.ts";
 
 export interface CrawledContent {
   title: string;
@@ -62,15 +62,24 @@ export async function crawlNewsContent(
       }
 
       const html = await response.text();
-      const { document } = parseHTML(html);
+      const doc = new DOMParser().parseFromString(html, "text/html");
 
-      const text = (sel: string) => document.querySelector(sel)?.textContent?.trim() || "";
+      if (!doc) {
+        return {
+          title: "",
+          content: "",
+          success: false,
+          error: "HTML 파싱 실패",
+        };
+      }
+
+      const text = (sel: string) => doc.querySelector(sel)?.textContent?.trim() || "";
 
       // 제목 추출 (여러 가능한 셀렉터 시도)
       let title =
         text("h2#title_area") ||
         text("h3.media_end_head_headline") ||
-        (document.querySelectorAll("h1")[0]?.textContent?.trim() || "") ||
+        (doc.querySelectorAll("h1")[0]?.textContent?.trim() || "") ||
         text("title");
 
       // 본문 추출 (Naver 뉴스: #newsct_article)
