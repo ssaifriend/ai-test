@@ -94,13 +94,17 @@ export default function AgentOpinions({ opinion }: AgentOpinionsProps) {
                     <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
                       목표가
                     </div>
-                    <div className="text-lg font-semibold text-green-600 dark:text-green-400">
+                    <div className="text-lg font-semibold text-gray-900 dark:text-white">
                       {agent.targetPrice.toLocaleString()}원
-                      {opinion.current_price && (
-                        <span className="ml-2 text-xs font-normal">
-                          ({((agent.targetPrice - opinion.current_price) / opinion.current_price * 100).toFixed(1)}%)
-                        </span>
-                      )}
+                      {opinion.current_price && (() => {
+                        const changePercent = ((agent.targetPrice - opinion.current_price) / opinion.current_price * 100);
+                        const isPositive = changePercent > 0;
+                        return (
+                          <span className={`ml-2 text-xs font-semibold ${isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                            ({isPositive ? '+' : ''}{changePercent.toFixed(1)}%)
+                          </span>
+                        );
+                      })()}
                     </div>
                   </div>
                 )}
@@ -109,13 +113,17 @@ export default function AgentOpinions({ opinion }: AgentOpinionsProps) {
                     <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
                       손절가
                     </div>
-                    <div className="text-lg font-semibold text-red-600 dark:text-red-400">
+                    <div className="text-lg font-semibold text-gray-900 dark:text-white">
                       {agent.stopLoss.toLocaleString()}원
-                      {opinion.current_price && (
-                        <span className="ml-2 text-xs font-normal">
-                          ({((agent.stopLoss - opinion.current_price) / opinion.current_price * 100).toFixed(1)}%)
-                        </span>
-                      )}
+                      {opinion.current_price && (() => {
+                        const changePercent = ((agent.stopLoss - opinion.current_price) / opinion.current_price * 100);
+                        const isPositive = changePercent > 0;
+                        return (
+                          <span className={`ml-2 text-xs font-semibold ${isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                            ({isPositive ? '+' : ''}{changePercent.toFixed(1)}%)
+                          </span>
+                        );
+                      })()}
                     </div>
                   </div>
                 )}

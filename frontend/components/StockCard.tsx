@@ -73,13 +73,17 @@ export default function StockCard({ stock, latestOpinion }: StockCardProps) {
             {latestOpinion.target_price && (
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600 dark:text-gray-400">목표가</span>
-                <span className="font-semibold text-green-600 dark:text-green-400">
+                <span className="font-semibold text-gray-900 dark:text-white">
                   {latestOpinion.target_price.toLocaleString()}원
-                  {latestOpinion.current_price && (
-                    <span className="ml-2 text-xs">
-                      (+{(((latestOpinion.target_price - latestOpinion.current_price) / latestOpinion.current_price) * 100).toFixed(1)}%)
-                    </span>
-                  )}
+                  {latestOpinion.current_price && (() => {
+                    const changePercent = ((latestOpinion.target_price - latestOpinion.current_price) / latestOpinion.current_price) * 100;
+                    const isPositive = changePercent > 0;
+                    return (
+                      <span className={`ml-2 text-xs font-semibold ${isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                        ({isPositive ? '+' : ''}{changePercent.toFixed(1)}%)
+                      </span>
+                    );
+                  })()}
                 </span>
               </div>
             )}
