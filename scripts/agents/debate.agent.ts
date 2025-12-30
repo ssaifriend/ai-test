@@ -6,7 +6,6 @@
  */
 
 import { createChatCompletion } from "../utils/openai-helper.ts";
-import { loadEnv } from "../utils/env.ts";
 import { logError } from "../utils/error-handler.ts";
 import type { AgentOpinion } from "./fundamental.agent.ts";
 
@@ -96,8 +95,6 @@ export async function runDebateAgent(opinions: AgentOpinions): Promise<DebateRes
     };
   }
 
-  const { openaiApiKey } = loadEnv();
-  const openai = new OpenAI({ apiKey: openaiApiKey });
 
   // 토론 프롬프트 작성
   const prompt = `다음 5명의 투자 전문가가 종목에 대해 서로 다른 의견을 가지고 있습니다. 이들의 의견을 조율하여 합의점을 찾아주세요.
@@ -139,7 +136,7 @@ export async function runDebateAgent(opinions: AgentOpinions): Promise<DebateRes
 JSON만 응답하고 다른 텍스트는 포함하지 마세요.`;
 
   try {
-    const response = await openai.chat.completions.create({
+    const response = await createChatCompletion({
       model: "gpt-4o-mini",
       messages: [
         {

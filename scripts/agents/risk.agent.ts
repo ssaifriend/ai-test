@@ -6,7 +6,6 @@
  */
 
 import { createChatCompletion } from "../utils/openai-helper.ts";
-import { loadEnv } from "../utils/env.ts";
 import { logError } from "../utils/error-handler.ts";
 import { SmartDataCollector, type RiskData } from "../services/smart-data-collector.ts";
 import type { AgentOpinion } from "./fundamental.agent.ts";
@@ -31,8 +30,6 @@ export async function runRiskAgent(
   stockName: string,
   dataCollector: SmartDataCollector
 ): Promise<RiskAgentResult> {
-  const { openaiApiKey } = loadEnv();
-  const openai = new OpenAI({ apiKey: openaiApiKey });
 
   // 리스크 데이터 수집
   const riskData = await dataCollector.collectRiskData(stockCode);
@@ -66,7 +63,7 @@ ${riskData.maxDrawdown !== undefined ? `- 최대 낙폭: ${riskData.maxDrawdown}
 JSON만 응답하고 다른 텍스트는 포함하지 마세요.`;
 
   try {
-    const response = await openai.chat.completions.create({
+    const response = await createChatCompletion({
       model: "gpt-4o-mini",
       messages: [
         {

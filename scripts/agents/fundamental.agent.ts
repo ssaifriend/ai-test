@@ -7,7 +7,6 @@
 
 import { createChatCompletion } from "../utils/openai-helper.ts";
 import { SmartDataCollector } from "../services/smart-data-collector.ts";
-import { loadEnv } from "../utils/env.ts";
 import { logError } from "../utils/error-handler.ts";
 
 export interface AgentOpinion {
@@ -35,9 +34,6 @@ export async function runFundamentalAgent(
   stockName: string,
   dataCollector: SmartDataCollector
 ): Promise<FundamentalAgentResult> {
-  const { openaiApiKey } = loadEnv();
-  const openai = new OpenAI({ apiKey: openaiApiKey });
-
   // 재무 데이터 수집
   const financialData = await dataCollector.collectFinancialData(stockCode);
 
@@ -74,7 +70,7 @@ ${financialData.netProfit !== undefined ? `- 순이익: ${financialData.netProfi
 JSON만 응답하고 다른 텍스트는 포함하지 마세요.`;
 
   try {
-    const response = await openai.chat.completions.create({
+    const response = await createChatCompletion({
       model: "gpt-4o-mini",
       messages: [
         {

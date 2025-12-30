@@ -6,7 +6,6 @@
  */
 
 import { createChatCompletion } from "../utils/openai-helper.ts";
-import { loadEnv } from "../utils/env.ts";
 import { logError } from "../utils/error-handler.ts";
 import { SmartDataCollector, type MacroData } from "../services/smart-data-collector.ts";
 import type { AgentOpinion } from "./fundamental.agent.ts";
@@ -30,8 +29,6 @@ export async function runMacroAgent(
   stockName: string,
   dataCollector: SmartDataCollector
 ): Promise<MacroAgentResult> {
-  const { openaiApiKey } = loadEnv();
-  const openai = new OpenAI({ apiKey: openaiApiKey });
 
   // 거시경제 데이터 수집
   const macroData = await dataCollector.collectMacroData();
@@ -63,7 +60,7 @@ ${macroData.interestRate !== undefined ? `- 기준금리: ${macroData.interestRa
 JSON만 응답하고 다른 텍스트는 포함하지 마세요.`;
 
   try {
-    const response = await openai.chat.completions.create({
+    const response = await createChatCompletion({
       model: "gpt-4o-mini",
       messages: [
         {

@@ -6,7 +6,6 @@
  */
 
 import { createChatCompletion } from "../utils/openai-helper.ts";
-import { loadEnv } from "../utils/env.ts";
 import { logError } from "../utils/error-handler.ts";
 import { SmartDataCollector, type TechnicalData } from "../services/smart-data-collector.ts";
 import type { AgentOpinion } from "./fundamental.agent.ts";
@@ -33,8 +32,6 @@ export async function runTechnicalAgent(
   stockName: string,
   dataCollector: SmartDataCollector
 ): Promise<TechnicalAgentResult> {
-  const { openaiApiKey } = loadEnv();
-  const openai = new OpenAI({ apiKey: openaiApiKey });
 
   // 기술적 지표 수집
   const technicalData = await dataCollector.collectTechnicalData(stockCode);
@@ -71,7 +68,7 @@ ${technicalData.volume !== undefined ? `- 거래량: ${technicalData.volume.toLo
 JSON만 응답하고 다른 텍스트는 포함하지 마세요.`;
 
   try {
-    const response = await openai.chat.completions.create({
+    const response = await createChatCompletion({
       model: "gpt-4o-mini",
       messages: [
         {

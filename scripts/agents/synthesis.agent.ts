@@ -6,7 +6,6 @@
  */
 
 import { createChatCompletion } from "../utils/openai-helper.ts";
-import { loadEnv } from "../utils/env.ts";
 import { logError } from "../utils/error-handler.ts";
 import type { AgentOpinions } from "./debate.agent.ts";
 import type { DebateResult } from "./debate.agent.ts";
@@ -44,8 +43,6 @@ export async function runSynthesisAgent(
   opinions: AgentOpinions,
   debateResult: DebateResult
 ): Promise<SynthesisResult> {
-  const { openaiApiKey } = loadEnv();
-  const openai = new OpenAI({ apiKey: openaiApiKey });
 
   const model = selectModel();
 
@@ -94,7 +91,7 @@ ${debateResult.hadDebate ? `\n[토론 결과]\n합의도: ${debateResult.consens
 JSON만 응답하고 다른 텍스트는 포함하지 마세요.`;
 
   try {
-    const response = await openai.chat.completions.create({
+    const response = await createChatCompletion({
       model,
       messages: [
         {

@@ -6,7 +6,6 @@
  */
 
 import { createChatCompletion } from "../utils/openai-helper.ts";
-import { loadEnv } from "../utils/env.ts";
 import { logError } from "../utils/error-handler.ts";
 import { SmartDataCollector, type NewsData } from "../services/smart-data-collector.ts";
 import type { AgentOpinion } from "./fundamental.agent.ts";
@@ -33,8 +32,6 @@ export async function runNewsAgent(
   stockName: string,
   dataCollector: SmartDataCollector
 ): Promise<NewsAgentResult> {
-  const { openaiApiKey } = loadEnv();
-  const openai = new OpenAI({ apiKey: openaiApiKey });
 
   // 뉴스 데이터 수집
   const newsData = await dataCollector.collectNewsData(stockId, 20);
@@ -75,7 +72,7 @@ ${recentNewsSummary || "최근 뉴스 없음"}
 JSON만 응답하고 다른 텍스트는 포함하지 마세요.`;
 
   try {
-    const response = await openai.chat.completions.create({
+    const response = await createChatCompletion({
       model: "gpt-4o-mini",
       messages: [
         {
