@@ -3,6 +3,7 @@
 
 import { loadEnv } from "./utils/env.ts";
 import { createClient } from "supabase";
+import { logError } from "./utils/error-handler.ts";
 import { batchAnalyzeSentiment, type NewsItemForAnalysis } from "./services/sentiment-analyzer.ts";
 
 /**
