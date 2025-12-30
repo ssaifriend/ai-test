@@ -5,7 +5,7 @@
  * 종목의 재무 건전성과 성장성을 평가합니다.
  */
 
-import OpenAI from "openai";
+import OpenAI from "npm:openai@4";
 import { SmartDataCollector } from "../services/smart-data-collector.ts";
 import { loadEnv } from "../utils/env.ts";
 import { logError } from "../utils/error-handler.ts";

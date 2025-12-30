@@ -5,7 +5,7 @@
  * 종목의 기술적 추세와 매매 타이밍을 평가합니다.
  */
 
-import OpenAI from "openai";
+import OpenAI from "npm:openai@4";
 import { loadEnv } from "../utils/env.ts";
 import { logError } from "../utils/error-handler.ts";
 import { SmartDataCollector, type TechnicalData } from "../services/smart-data-collector.ts";

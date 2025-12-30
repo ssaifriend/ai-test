@@ -5,7 +5,7 @@
  * Naver 뉴스의 경우 `#newsct_article` 셀렉터를 사용하여 본문을 추출합니다.
  */
 
-import { load } from "cheerio";
+import { load } from "npm:cheerio@1";
 
 export interface CrawledContent {
   title: string;

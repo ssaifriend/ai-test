@@ -5,7 +5,7 @@
  * 원문은 저장하지 않고 요약만 저장하여 저작권 문제를 방지합니다.
  */
 
-import OpenAI from "openai";
+import OpenAI from "npm:openai@4";
 import { loadEnv } from "../utils/env.ts";
 
 export interface StructuredNews {
