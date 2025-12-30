@@ -111,6 +111,7 @@ export async function collectFullContentForStock(
   // 4. 원문 크롤링 및 구조화
   let successCount = 0;
   let failCount = 0;
+  let reuseCount = 0;
 
   for (const news of targetNews) {
     if (!news.url) {
@@ -120,6 +121,41 @@ export async function collectFullContentForStock(
     }
 
     try {
+      // 동일 URL로 이미 수집한 원문이 있는지 확인 (종목 간 중복 재사용)
+      const { data: existingNews, error: checkError } = await supabase
+        .from("news_articles")
+        .select("full_content_summary, financial_numbers, key_facts, future_outlook")
+        .eq("url", news.url)
+        .eq("has_full_content", true)
+        .limit(1)
+        .single();
+
+      if (!checkError && existingNews && existingNews.full_content_summary) {
+        // 기존 원문 재사용
+        console.log(`♻️  기존 원문 재사용: ${news.title.substring(0, 50)}...`);
+
+        const { error: updateError } = await supabase
+          .from("news_articles")
+          .update({
+            importance: importanceMap.get(news.id),
+            has_full_content: true,
+            full_content_summary: existingNews.full_content_summary,
+            financial_numbers: existingNews.financial_numbers,
+            key_facts: existingNews.key_facts,
+            future_outlook: existingNews.future_outlook,
+          })
+          .eq("id", news.id);
+
+        if (updateError) {
+          throw updateError;
+        }
+
+        reuseCount++;
+        successCount++;
+        continue;
+      }
+
+      // 새로 크롤링
       console.log(`🔍 크롤링 중: ${news.title.substring(0, 50)}...`);
 
       // 원문 크롤링
@@ -171,7 +207,7 @@ export async function collectFullContentForStock(
       .eq("id", news.id);
   }
 
-  console.log(`\n✨ 원문 수집 완료: 성공 ${successCount}개, 실패 ${failCount}개`);
+  console.log(`\n✨ 원문 수집 완료: 성공 ${successCount}개 (새로 수집: ${successCount - reuseCount}개, 재사용: ${reuseCount}개), 실패 ${failCount}개`);
 }
 
 async function main() {
