@@ -19,22 +19,26 @@ jobs:
       - name: Analyze sentiment
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
           curl -X POST \
             "$SUPABASE_URL/functions/v1/analyze-sentiment" \
-            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
             -H "Content-Type: application/json" \
+            -d '{}' \
+            --max-time 600 \
             --fail-with-body || true
 
       - name: Run multi-agent analysis
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
           curl -X POST \
             "$SUPABASE_URL/functions/v1/multi-agent-analysis" \
-            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
             -H "Content-Type: application/json" \
+            -d '{}' \
+            --max-time 1200 \
             --fail-with-body
 

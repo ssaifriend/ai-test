@@ -13,6 +13,11 @@ serve(async (req) => {
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   };
 
+  // Handle CORS preflight
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
   try {
     // Supabase 클라이언트 생성 (Edge Functions에서는 자동으로 제공됨)
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
