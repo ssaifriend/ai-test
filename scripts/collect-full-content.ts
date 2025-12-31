@@ -54,7 +54,7 @@ export async function collectFullContentForStock(
     .not("filter_score", "is", null) // 필터링 완료된 것만
     .is("importance", null) // 중요도 미분류
     .order("collected_at", { ascending: false })
-    .limit(100);
+    .limit(200);
 
   if (fetchError) {
     throw fetchError;
@@ -108,93 +108,119 @@ export async function collectFullContentForStock(
     return;
   }
 
-  // 4. 원문 크롤링 및 구조화
+  // 4. 원문 크롤링 및 구조화 (병렬 처리)
   let successCount = 0;
   let failCount = 0;
   let reuseCount = 0;
 
-  for (const news of targetNews) {
-    if (!news.url) {
-      console.log(`⚠️  URL이 없어 스킵: ${news.title}`);
-      failCount++;
-      continue;
-    }
+  // 병렬 처리를 위해 Promise.all 사용 (배치 단위로 처리)
+  const BATCH_SIZE = 20; // 동시에 처리할 뉴스 개수 (병렬 처리로 성능 향상)
+  const batches = [];
 
-    try {
-      // 동일 URL로 이미 수집한 원문이 있는지 확인 (종목 간 중복 재사용)
-      const { data: existingNews, error: checkError } = await supabase
-        .from("news_articles")
-        .select("full_content_summary, financial_numbers, key_facts, future_outlook")
-        .eq("url", news.url)
-        .eq("has_full_content", true)
-        .limit(1)
-        .single();
+  for (let i = 0; i < targetNews.length; i += BATCH_SIZE) {
+    batches.push(targetNews.slice(i, i + BATCH_SIZE));
+  }
 
-      if (!checkError && existingNews && existingNews.full_content_summary) {
-        // 기존 원문 재사용
-        console.log(`♻️  기존 원문 재사용: ${news.title.substring(0, 50)}...`);
-
-        const { error: updateError } = await supabase
-          .from("news_articles")
-          .update({
-            importance: importanceMap.get(news.id),
-            has_full_content: true,
-            full_content_summary: existingNews.full_content_summary,
-            financial_numbers: existingNews.financial_numbers,
-            key_facts: existingNews.key_facts,
-            future_outlook: existingNews.future_outlook,
-          })
-          .eq("id", news.id);
-
-        if (updateError) {
-          throw updateError;
+  for (const batch of batches) {
+    const results = await Promise.allSettled(
+      batch.map(async (news) => {
+        if (!news.url) {
+          console.log(`⚠️  URL이 없어 스킵: ${news.title}`);
+          return { success: false, reused: false };
         }
 
-        reuseCount++;
-        successCount++;
-        continue;
-      }
+        try {
+          // 동일 URL로 이미 수집한 원문이 있는지 확인 (종목 간 중복 재사용)
+          const { data: existingNews, error: checkError } = await supabase
+            .from("news_articles")
+            .select("full_content_summary, financial_numbers, key_facts, future_outlook")
+            .eq("url", news.url)
+            .eq("has_full_content", true)
+            .limit(1)
+            .single();
 
-      // 새로 크롤링
-      console.log(`🔍 크롤링 중: ${news.title.substring(0, 50)}...`);
+          if (!checkError && existingNews && existingNews.full_content_summary) {
+            // 기존 원문 재사용
+            console.log(`♻️  기존 원문 재사용: ${news.title.substring(0, 50)}...`);
 
-      // 원문 크롤링
-      const crawled = await crawlNewsContent(news.url);
+            const { error: updateError } = await supabase
+              .from("news_articles")
+              .update({
+                importance: importanceMap.get(news.id),
+                has_full_content: true,
+                full_content_summary: existingNews.full_content_summary,
+                financial_numbers: existingNews.financial_numbers,
+                key_facts: existingNews.key_facts,
+                future_outlook: existingNews.future_outlook,
+              })
+              .eq("id", news.id);
 
-      if (!crawled.success || !crawled.content) {
-        console.log(`  ❌ 크롤링 실패: ${crawled.error || "알 수 없는 오류"}`);
+            if (updateError) {
+              throw updateError;
+            }
+
+            return { success: true, reused: true };
+          }
+
+          // 새로 크롤링
+          console.log(`🔍 크롤링 중: ${news.title.substring(0, 50)}...`);
+
+          // 원문 크롤링
+          const crawled = await crawlNewsContent(news.url);
+
+          if (!crawled.success || !crawled.content) {
+            console.log(`  ❌ 크롤링 실패: ${crawled.error || "알 수 없는 오류"}`);
+            return { success: false, reused: false };
+          }
+
+          // LLM 구조화
+          const structured = await structureNewsContent(crawled.content, news.title);
+
+          // 데이터베이스 업데이트
+          const { error: updateError } = await supabase
+            .from("news_articles")
+            .update({
+              importance: importanceMap.get(news.id),
+              has_full_content: true,
+              full_content_summary: structured.summary,
+              financial_numbers: structured.financialNumbers,
+              key_facts: structured.keyFacts,
+              future_outlook: structured.futureOutlook,
+            })
+            .eq("id", news.id);
+
+          if (updateError) {
+            throw updateError;
+          }
+
+          console.log(`  ✅ 완료: ${structured.summary.substring(0, 50)}...`);
+          return { success: true, reused: false };
+        } catch (error) {
+          logError(`  ❌ 처리 실패:`, error);
+          return { success: false, reused: false };
+        }
+      })
+    );
+
+    // 결과 집계
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        if (result.value.success) {
+          successCount++;
+          if (result.value.reused) {
+            reuseCount++;
+          }
+        } else {
+          failCount++;
+        }
+      } else {
         failCount++;
-        continue;
       }
+    }
 
-      // LLM 구조화
-      const structured = await structureNewsContent(crawled.content, news.title);
-
-      // 데이터베이스 업데이트
-      const { error: updateError } = await supabase
-        .from("news_articles")
-        .update({
-          importance: importanceMap.get(news.id),
-          has_full_content: true,
-          full_content_summary: structured.summary,
-          financial_numbers: structured.financialNumbers,
-          key_facts: structured.keyFacts,
-          future_outlook: structured.futureOutlook,
-        })
-        .eq("id", news.id);
-
-      if (updateError) {
-        throw updateError;
-      }
-
-      console.log(`  ✅ 완료: ${structured.summary.substring(0, 50)}...`);
-      successCount++;
-
-      // API 호출 간 딜레이 (Rate Limit 방지)
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-    } catch (error) {
-      logError(`  ❌ 처리 실패:`, error);
-      failCount++;
+    // 배치 간 짧은 딜레이 (Rate Limit 방지)
+    if (batches.indexOf(batch) < batches.length - 1) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     }
   }
 

@@ -24,7 +24,7 @@ jobs:
   collect-news:
     name: Collect News
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code
@@ -66,5 +66,5 @@ jobs:
             -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
             -H "Content-Type: application/json" \
             -d '{}' \
-            --max-time 300 \
+            --max-time 600 \
             --fail-with-body || true
