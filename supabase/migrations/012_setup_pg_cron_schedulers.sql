@@ -14,22 +14,19 @@
 
 -- 기존 크론 작업 제거 (있다면)
 DO $$
+DECLARE
+  job_record RECORD;
 BEGIN
-  PERFORM cron.unschedule('invoke-collect-news-peak');
-  PERFORM cron.unschedule('invoke-collect-news-active-morning');
-  PERFORM cron.unschedule('invoke-collect-news-active-afternoon');
-  PERFORM cron.unschedule('invoke-collect-news-off');
-  PERFORM cron.unschedule('invoke-filter-news-peak');
-  PERFORM cron.unschedule('invoke-filter-news-active-morning');
-  PERFORM cron.unschedule('invoke-filter-news-active-afternoon');
-  PERFORM cron.unschedule('invoke-filter-news-off');
-  PERFORM cron.unschedule('invoke-full-content-peak');
-  PERFORM cron.unschedule('invoke-full-content-active-morning');
-  PERFORM cron.unschedule('invoke-full-content-active-afternoon');
-  PERFORM cron.unschedule('invoke-full-content-off');
+  -- invoke-로 시작하는 모든 크론 작업 제거
+  FOR job_record IN
+    SELECT jobname FROM cron.job WHERE jobname LIKE 'invoke-%'
+  LOOP
+    PERFORM cron.unschedule(job_record.jobname);
+    RAISE NOTICE 'Unscheduled job: %', job_record.jobname;
+  END LOOP;
 EXCEPTION
   WHEN OTHERS THEN
-    RAISE NOTICE 'cron jobs do not exist yet';
+    RAISE NOTICE 'Error unscheduling jobs: %', SQLERRM;
 END $$;
 
 -- ============================================================================
@@ -246,6 +243,136 @@ SELECT cron.schedule(
     net.http_post(
       url := (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'supabase_url')
              || '/functions/v1/collect-full-content',
+      headers := jsonb_build_object(
+        'Content-Type', 'application/json',
+        'Authorization', 'Bearer ' || (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'service_role_key')
+      ),
+      body := '{}'::jsonb
+    ) AS request_id;
+  $$
+);
+
+-- ============================================================================
+-- Financial Data Collection: 매일 14:00 KST (05:00 UTC)
+-- ============================================================================
+
+SELECT cron.schedule(
+  'invoke-collect-financial-data',
+  '0 5 * * *', -- 매일 05:00 UTC (14:00 KST)
+  $$
+  SELECT
+    net.http_post(
+      url := (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'supabase_url')
+             || '/functions/v1/collect-financial-data',
+      headers := jsonb_build_object(
+        'Content-Type', 'application/json',
+        'Authorization', 'Bearer ' || (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'service_role_key')
+      ),
+      body := '{}'::jsonb
+    ) AS request_id;
+  $$
+);
+
+-- ============================================================================
+-- Multi-Agent Analysis: 장전/장중/장후 3회 실행
+-- ============================================================================
+
+-- 1. 장전: 08:30 KST (23:30 UTC 전날)
+SELECT cron.schedule(
+  'invoke-analyze-sentiment-premarket',
+  '30 23 * * 0-4', -- 일-목 23:30 (월-금 08:30 KST)
+  $$
+  SELECT
+    net.http_post(
+      url := (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'supabase_url')
+             || '/functions/v1/analyze-sentiment',
+      headers := jsonb_build_object(
+        'Content-Type', 'application/json',
+        'Authorization', 'Bearer ' || (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'service_role_key')
+      ),
+      body := '{}'::jsonb
+    ) AS request_id;
+  $$
+);
+
+SELECT cron.schedule(
+  'invoke-multi-agent-premarket',
+  '32 23 * * 0-4', -- 장전 감정분석 2분 후
+  $$
+  SELECT
+    net.http_post(
+      url := (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'supabase_url')
+             || '/functions/v1/multi-agent-analysis',
+      headers := jsonb_build_object(
+        'Content-Type', 'application/json',
+        'Authorization', 'Bearer ' || (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'service_role_key')
+      ),
+      body := '{}'::jsonb
+    ) AS request_id;
+  $$
+);
+
+-- 2. 장중: 12:00 KST (03:00 UTC)
+SELECT cron.schedule(
+  'invoke-analyze-sentiment-intraday',
+  '0 3 * * 1-5', -- 월-금 03:00
+  $$
+  SELECT
+    net.http_post(
+      url := (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'supabase_url')
+             || '/functions/v1/analyze-sentiment',
+      headers := jsonb_build_object(
+        'Content-Type', 'application/json',
+        'Authorization', 'Bearer ' || (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'service_role_key')
+      ),
+      body := '{}'::jsonb
+    ) AS request_id;
+  $$
+);
+
+SELECT cron.schedule(
+  'invoke-multi-agent-intraday',
+  '2 3 * * 1-5', -- 장중 감정분석 2분 후
+  $$
+  SELECT
+    net.http_post(
+      url := (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'supabase_url')
+             || '/functions/v1/multi-agent-analysis',
+      headers := jsonb_build_object(
+        'Content-Type', 'application/json',
+        'Authorization', 'Bearer ' || (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'service_role_key')
+      ),
+      body := '{}'::jsonb
+    ) AS request_id;
+  $$
+);
+
+-- 3. 장후: 15:40 KST (06:40 UTC)
+SELECT cron.schedule(
+  'invoke-analyze-sentiment-aftermarket',
+  '40 6 * * 1-5', -- 월-금 06:40
+  $$
+  SELECT
+    net.http_post(
+      url := (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'supabase_url')
+             || '/functions/v1/analyze-sentiment',
+      headers := jsonb_build_object(
+        'Content-Type', 'application/json',
+        'Authorization', 'Bearer ' || (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'service_role_key')
+      ),
+      body := '{}'::jsonb
+    ) AS request_id;
+  $$
+);
+
+SELECT cron.schedule(
+  'invoke-multi-agent-aftermarket',
+  '42 6 * * 1-5', -- 장후 감정분석 2분 후
+  $$
+  SELECT
+    net.http_post(
+      url := (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'supabase_url')
+             || '/functions/v1/multi-agent-analysis',
       headers := jsonb_build_object(
         'Content-Type', 'application/json',
         'Authorization', 'Bearer ' || (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'service_role_key')
