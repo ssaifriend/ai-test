@@ -1,16 +1,30 @@
--- pg_cron을 사용한 뉴스 수집 자동화
+-- pg_cron을 사용한 모든 스케줄러 자동화
 --
 -- 사전 준비:
--- 1. Supabase Console > Database > Extensions에서 활성화:
---    - pg_cron (스케줄링용)
---    - pg_net (HTTP 요청용)
---
--- 2. Supabase Vault에 secrets 저장 (SQL Editor에서 실행):
+-- 1. Supabase Vault에 secrets 저장 (SQL Editor에서 실행):
 --    SELECT vault.create_secret('https://YOUR_PROJECT.supabase.co', 'supabase_url');
 --    SELECT vault.create_secret('YOUR_SERVICE_ROLE_KEY', 'service_role_key');
 --
 --    (YOUR_PROJECT와 YOUR_SERVICE_ROLE_KEY를 실제 값으로 변경)
 --    Service Role Key는 Project Settings > API에서 확인
+
+-- Required extensions 활성화
+CREATE EXTENSION IF NOT EXISTS pg_cron;
+CREATE EXTENSION IF NOT EXISTS pg_net;
+
+-- Extensions 확인
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_cron') THEN
+    RAISE EXCEPTION 'pg_cron extension is not installed. Please enable it in Supabase Dashboard > Database > Extensions';
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_net') THEN
+    RAISE EXCEPTION 'pg_net extension is not installed. Please enable it in Supabase Dashboard > Database > Extensions';
+  END IF;
+
+  RAISE NOTICE 'All required extensions are installed: pg_cron, pg_net';
+END $$;
 
 -- 기존 크론 작업 제거 (있다면)
 DO $$
