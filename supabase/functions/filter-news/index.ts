@@ -1,9 +1,8 @@
 // Supabase Edge Function: 뉴스 필터링
-// 수집된 뉴스에 필터링을 적용하고 통계를 수집
+// 수집된 뉴스에 필터링을 적용 (필터 완전 비활성화 상태)
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2?target=deno";
-import { runFilteringPipeline } from "../../../scripts/filter-news.ts";
 
 serve(async (req) => {
   const corsHeaders = {
@@ -43,26 +42,61 @@ serve(async (req) => {
       );
     }
 
-    // 현재 시간대 판단
-    const now = new Date();
-    const hour = now.getHours();
-    let timePeriod: "peak" | "active" | "off" = "off";
+    let totalFiltered = 0;
 
-    if (hour >= 9 && hour < 15) {
-      timePeriod = "peak";
-    } else if ((hour >= 8 && hour < 9) || (hour >= 15 && hour < 20)) {
-      timePeriod = "active";
-    }
-
+    // 각 종목별로 필터링
     for (const stock of stocks) {
-      await runFilteringPipeline(supabase, stock.id, timePeriod);
+      // 미필터링 뉴스 조회
+      const { data: rawNews, error: fetchError } = await supabase
+        .from("news_articles")
+        .select("*")
+        .eq("stock_id", stock.id)
+        .is("filter_score", null)
+        .order("collected_at", { ascending: false })
+        .limit(1000);
+
+      if (fetchError || !rawNews || rawNews.length === 0) {
+        continue;
+      }
+
+      // 필터링: 현재는 모든 뉴스를 통과시킴 (필터 비활성화 상태)
+      // 매우 짧은 제목만 필터링 (5자 미만)
+      for (const news of rawNews) {
+        let filterScore = 0.5; // 기본 점수
+
+        // 극도로 짧은 제목은 필터링
+        if (news.title && news.title.length < 5) {
+          continue;
+        }
+
+        // 설명 길이에 따른 점수
+        if (news.description && news.description.length > 100) {
+          filterScore += 0.1;
+        }
+
+        // 제목 길이 적절성
+        if (news.title && news.title.length >= 20 && news.title.length <= 100) {
+          filterScore += 0.1;
+        }
+
+        filterScore = Math.min(1.0, Math.max(0.0, filterScore));
+
+        // filter_score 업데이트
+        await supabase
+          .from("news_articles")
+          .update({ filter_score: filterScore })
+          .eq("id", news.id);
+
+        totalFiltered++;
+      }
     }
 
     return new Response(
-      JSON.stringify({ message: "필터링 완료", stocks: stocks.length }),
+      JSON.stringify({ message: "필터링 완료", filtered: totalFiltered, stocks: stocks.length }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
   } catch (error) {
+    console.error("필터링 오류:", error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : String(error) }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }

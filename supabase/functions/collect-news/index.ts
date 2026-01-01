@@ -4,8 +4,16 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2?target=deno";
 
-// scripts의 함수들을 import
-import { collectNewsForStock } from "../../../scripts/collect-news.ts";
+interface NewsItem {
+  title: string;
+  link: string;
+  description?: string;
+  pubDate?: string;
+}
+
+interface NaverNewsResponse {
+  items: NewsItem[];
+}
 
 serve(async (req) => {
   const corsHeaders = {
@@ -19,7 +27,7 @@ serve(async (req) => {
   }
 
   try {
-    // Supabase 클라이언트 생성 (Edge Functions에서는 자동으로 제공됨)
+    // 환경 변수 가져오기
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const naverClientId = Deno.env.get("NAVER_CLIENT_ID")!;
@@ -50,16 +58,63 @@ serve(async (req) => {
 
     let totalSaved = 0;
 
+    // 각 종목별로 뉴스 수집
     for (const stock of stocks) {
-      const saved = await collectNewsForStock(
-        supabase,
-        stock.code,
-        stock.id,
-        stock.name,
-        naverClientId,
-        naverClientSecret
-      );
-      totalSaved += saved;
+      const query = encodeURIComponent(stock.name);
+      const url = `https://openapi.naver.com/v1/search/news.json?query=${query}&display=50&sort=date`;
+
+      try {
+        const response = await fetch(url, {
+          headers: {
+            "X-Naver-Client-Id": naverClientId,
+            "X-Naver-Client-Secret": naverClientSecret,
+          },
+        });
+
+        if (!response.ok) {
+          console.error(`Naver API 호출 실패 (${stock.name}): ${response.status}`);
+          continue;
+        }
+
+        const data: NaverNewsResponse = await response.json();
+
+        for (const item of data.items) {
+          // 중복 체크
+          const { data: existing } = await supabase
+            .from("news_articles")
+            .select("id")
+            .eq("stock_id", stock.id)
+            .eq("url", item.link)
+            .single();
+
+          if (existing) {
+            continue; // 이미 존재하는 뉴스는 스킵
+          }
+
+          // 뉴스 저장
+          const newsArticle = {
+            stock_id: stock.id,
+            title: item.title.replace(/<[^>]*>/g, ""), // HTML 태그 제거
+            description: item.description?.replace(/<[^>]*>/g, ""),
+            url: item.link,
+            published_at: item.pubDate ? new Date(item.pubDate).toISOString() : null,
+            collected_at: new Date().toISOString(),
+            has_full_content: false,
+            analyzed: false,
+          };
+
+          const { error } = await supabase.from("news_articles").insert(newsArticle);
+
+          if (error) {
+            console.error(`뉴스 저장 실패 (${item.title}):`, error);
+            continue;
+          }
+
+          totalSaved++;
+        }
+      } catch (error) {
+        console.error(`뉴스 수집 실패 (${stock.name}):`, error);
+      }
     }
 
     return new Response(
@@ -67,10 +122,10 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
   } catch (error) {
+    console.error("뉴스 수집 오류:", error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : String(error) }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
     );
   }
 });
-
