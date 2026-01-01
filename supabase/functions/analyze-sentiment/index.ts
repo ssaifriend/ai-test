@@ -3,7 +3,8 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2?target=deno";
-import { analyzeSentimentForStock } from "../../../scripts/analyze-sentiment.ts";
+import { batchAnalyzeSentiment, type NewsItemForAnalysis } from "../_shared/services/sentiment-analyzer.ts";
+import { logError } from "../_shared/utils/error-handler.ts";
 
 serve(async (req) => {
   const corsHeaders = {
@@ -44,49 +45,60 @@ serve(async (req) => {
       );
     }
 
-    let totalMediumOrHighNews = 0;
+    let totalAnalyzed = 0;
 
     for (const stock of stocks) {
-      await analyzeSentimentForStock(supabase, stock.id);
-
-      // 최근 1시간 이내 medium 이상 importance 뉴스 개수 확인
-      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-      const { data: importantNews, error: newsError } = await supabase
+      // 1. 분석되지 않은 뉴스 조회
+      const { data: unanalyzedNews, error: fetchError } = await supabase
         .from("news_articles")
-        .select("id", { count: "exact" })
+        .select("*")
         .eq("stock_id", stock.id)
-        .in("importance", ["medium", "high"])
-        .gte("collected_at", oneHourAgo);
+        .eq("analyzed", false)
+        .not("filter_score", "is", null)
+        .order("collected_at", { ascending: false })
+        .limit(500);
 
-      if (!newsError && importantNews) {
-        totalMediumOrHighNews += importantNews.length;
+      if (fetchError || !unanalyzedNews || unanalyzedNews.length === 0) {
+        continue;
       }
-    }
 
-    // medium 이상 뉴스가 1개 이상이면 Multi-Agent 분석 트리거
-    if (totalMediumOrHighNews >= 1) {
-      const githubToken = Deno.env.get("GITHUB_TOKEN");
-      const githubRepo = Deno.env.get("GITHUB_REPOSITORY") || "ssaifriend/ai-test";
+      // 2. 배치 분석을 위한 형식으로 변환
+      const newsItemsForAnalysis: NewsItemForAnalysis[] = unanalyzedNews.map((news, index) => ({
+        index,
+        title: news.title,
+        description: news.description || undefined,
+      }));
 
-      if (githubToken) {
+      // 3. 배치 감성 분석 실행
+      const results = await batchAnalyzeSentiment(newsItemsForAnalysis, 50);
+
+      // 4. 결과 저장
+      for (let i = 0; i < unanalyzedNews.length; i++) {
+        const news = unanalyzedNews[i];
+        const result = results[i];
+
+        if (!result) {
+          continue;
+        }
+
         try {
-          await fetch(`https://api.github.com/repos/${githubRepo}/dispatches`, {
-            method: "POST",
-            headers: {
-              "Accept": "application/vnd.github+json",
-              "Authorization": `Bearer ${githubToken}`,
-              "X-GitHub-Api-Version": "2022-11-28",
-            },
-            body: JSON.stringify({
-              event_type: "news-trigger",
-              client_payload: {
-                important_news_count: totalMediumOrHighNews,
-              },
-            }),
-          });
-          console.log(`✅ Multi-Agent 분석 트리거 (중요 뉴스 ${totalMediumOrHighNews}개)`);
+          const { error: updateError } = await supabase
+            .from("news_articles")
+            .update({
+              sentiment: result.sentiment,
+              sentiment_score: result.sentimentScore,
+              key_topics: result.keyTopics.length > 0 ? result.keyTopics : null,
+              impact: result.impact,
+              analyzed: true,
+              analysis_version: "1.0",
+            })
+            .eq("id", news.id);
+
+          if (!updateError) {
+            totalAnalyzed++;
+          }
         } catch (error) {
-          console.error("GitHub Actions 트리거 실패:", error);
+          logError(`저장 실패 (${news.title}):`, error);
         }
       }
     }
@@ -95,12 +107,12 @@ serve(async (req) => {
       JSON.stringify({
         message: "감성 분석 완료",
         stocks: stocks.length,
-        important_news_count: totalMediumOrHighNews,
-        triggered_analysis: totalMediumOrHighNews >= 1,
+        analyzed: totalAnalyzed,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
   } catch (error) {
+    console.error("감성 분석 오류:", error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : String(error) }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
