@@ -58,21 +58,16 @@ serve(async (req) => {
       try {
         console.log(`\n📊 ${stock.name} (${stock.code}) 분석 시작...`);
 
-        // 1. 스마트 데이터 수집
+        // 1. 스마트 데이터 수집기 생성
         const dataCollector = new SmartDataCollector(supabase);
-        const financialData = await dataCollector.collectFinancialData(stock.code);
-        const technicalData = await dataCollector.collectTechnicalData(stock.code);
-        const newsData = await dataCollector.collectNewsData(stock.id);
-        const macroData = await dataCollector.collectMacroData();
-        const riskData = await dataCollector.collectRiskData(stock.code);
 
-        // 2. 5개 Agent 병렬 실행
+        // 2. 5개 Agent 병렬 실행 (각 Agent가 내부에서 데이터 수집)
         const [fundamental, technical, news, macro, risk] = await Promise.all([
-          runFundamentalAgent(stock.code, stock.name, financialData),
-          runTechnicalAgent(stock.code, stock.name, technicalData),
-          runNewsAgent(stock.code, stock.name, newsData),
-          runMacroAgent(stock.code, stock.name, macroData),
-          runRiskAgent(stock.code, stock.name, riskData),
+          runFundamentalAgent(stock.code, stock.name, dataCollector, stock.id),
+          runTechnicalAgent(stock.code, stock.name, dataCollector, stock.id),
+          runNewsAgent(stock.id, stock.name, dataCollector),
+          runMacroAgent(stock.name, dataCollector, stock.id),
+          runRiskAgent(stock.code, stock.name, dataCollector, stock.id),
         ]);
 
         const agentOpinions: AgentOpinions = {
@@ -91,48 +86,60 @@ serve(async (req) => {
 
         // 5. Synthesis Agent 실행
         const finalOpinion = await runSynthesisAgent(
+          stock.name,
+          stock.code,
           agentOpinions,
           debateResult,
-          consensus,
-          stock.name,
-          technicalData.price
+          stock.id,
+          technical.analysis.price
         );
 
         // 6. 결과 저장
         const { error: insertError } = await supabase.from("investment_opinions").insert({
           stock_id: stock.id,
-          agent_version: "1.0",
-          fundamental_opinion: fundamental.direction,
+
+          // 각 Agent 의견
+          fundamental_rec: fundamental.recommendation,
           fundamental_confidence: fundamental.confidence,
           fundamental_reasoning: fundamental.reasoning,
-          fundamental_price: fundamental.targetPrice,
-          technical_opinion: technical.direction,
+
+          technical_rec: technical.recommendation,
           technical_confidence: technical.confidence,
           technical_reasoning: technical.reasoning,
-          technical_price: technical.targetPrice,
-          news_opinion: news.direction,
+
+          news_rec: news.recommendation,
           news_confidence: news.confidence,
           news_reasoning: news.reasoning,
-          news_price: news.targetPrice,
-          macro_opinion: macro.direction,
+
+          macro_rec: macro.recommendation,
           macro_confidence: macro.confidence,
           macro_reasoning: macro.reasoning,
-          macro_price: macro.targetPrice,
-          risk_opinion: risk.direction,
+
+          risk_rec: risk.recommendation,
           risk_confidence: risk.confidence,
           risk_reasoning: risk.reasoning,
-          risk_price: risk.targetPrice,
-          debate_summary: debateResult.summary,
-          debate_key_points: debateResult.keyPoints,
-          consensus_direction: consensus.direction,
-          consensus_confidence: consensus.confidence,
-          synthesis_direction: finalOpinion.direction,
-          synthesis_confidence: finalOpinion.confidence,
-          synthesis_reasoning: finalOpinion.reasoning,
-          synthesis_target_price: finalOpinion.targetPrice,
-          synthesis_risk_factors: finalOpinion.riskFactors,
-          synthesis_investment_strategy: finalOpinion.investmentStrategy,
-          current_price: technicalData.price,
+
+          // 토론 결과
+          had_debate: debateResult.hadDebate,
+          debate_summary: debateResult.debateSummary,
+          consensus_level: consensus,
+          changed_agents: debateResult.changedAgents || [],
+
+          // 최종 의견
+          final_rec: finalOpinion.finalRecommendation,
+          final_confidence: finalOpinion.finalConfidence,
+          target_price: finalOpinion.targetPrice,
+          stop_loss: finalOpinion.stopLoss,
+          time_horizon: finalOpinion.timeHorizon,
+          strategy: finalOpinion.strategy,
+          key_reasons: finalOpinion.keyReasons,
+          risks: finalOpinion.risks,
+
+          // 메타 정보
+          analysis_type: "full",
+          synthesis_model: finalOpinion.synthesisModel,
+          used_cache: dataCollector.hasUsedCache(),
+          current_price: technical.analysis.price,
         });
 
         if (insertError) {
