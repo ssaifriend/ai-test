@@ -7,7 +7,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logError } from "../utils/error-handler.ts";
-import { getCurrentPrice, getDailyChart, getIndexPrice } from "../utils/kis-api.ts";
+import { KISApiClient } from "../utils/kis-api.ts";
 import { calculateSMA, calculateRSI, calculateMACD } from "../utils/technical-indicators.ts";
 
 export interface FinancialData {
@@ -84,9 +84,18 @@ export class SmartDataCollector {
   private supabase: ReturnType<typeof createClient<any, "public">>;
   private cache: Map<string, { data: unknown; expiresAt: number }> = new Map();
   private cacheUsage: Set<string> = new Set(); // 캐시 사용 추적
+  private kisClient: KISApiClient | null = null; // KIS API 클라이언트 (토큰 재사용)
 
   constructor(supabase: ReturnType<typeof createClient<any, "public">>) {
     this.supabase = supabase;
+
+    // KIS API 클라이언트 초기화 (환경 변수가 있을 경우)
+    const kisAppKey = Deno.env.get("KIS_APP_KEY");
+    const kisAppSecret = Deno.env.get("KIS_APP_SECRET");
+
+    if (kisAppKey && kisAppSecret) {
+      this.kisClient = new KISApiClient(kisAppKey, kisAppSecret);
+    }
   }
 
   /**
@@ -185,22 +194,19 @@ export class SmartDataCollector {
     };
 
     try {
-      const kisAppKey = Deno.env.get("KIS_APP_KEY");
-      const kisAppSecret = Deno.env.get("KIS_APP_SECRET");
-
-      if (!kisAppKey || !kisAppSecret) {
+      if (!this.kisClient) {
         console.log(`ℹ️  기술적 지표 수집: ${stockCode} - KIS API 키 설정 필요 (한국투자증권 OpenAPI에서 발급)`);
         this.setCache(cacheKey, technicalData, CACHE_TTL.technical);
         return technicalData;
       }
 
-      // 1. 현재가 조회
-      const currentData = await getCurrentPrice(kisAppKey, kisAppSecret, stockCode);
+      // 1. 현재가 조회 (토큰 재사용)
+      const currentData = await this.kisClient.getCurrentPrice(stockCode);
       technicalData.price = currentData.price;
       technicalData.volume = currentData.volume;
 
-      // 2. 일봉 데이터 조회 (최근 100일)
-      const dailyChart = await getDailyChart(kisAppKey, kisAppSecret, stockCode, 100);
+      // 2. 일봉 데이터 조회 (최근 100일, 토큰 재사용)
+      const dailyChart = await this.kisClient.getDailyChart(stockCode, 100);
 
       if (dailyChart.length === 0) {
         console.log(`ℹ️  일봉 데이터 없음: ${stockCode}`);
@@ -296,27 +302,24 @@ export class SmartDataCollector {
     };
 
     try {
-      const kisAppKey = Deno.env.get("KIS_APP_KEY");
-      const kisAppSecret = Deno.env.get("KIS_APP_SECRET");
-
-      if (!kisAppKey || !kisAppSecret) {
+      if (!this.kisClient) {
         console.log("ℹ️  거시경제 데이터 수집: KIS API 키 설정 필요");
         this.setCache(cacheKey, macroData, CACHE_TTL.macro);
         return macroData;
       }
 
-      // 1. KOSPI 지수 조회 (0001 - 코스피)
+      // 1. KOSPI 지수 조회 (0001 - 코스피, 토큰 재사용)
       try {
-        const kospiData = await getIndexPrice(kisAppKey, kisAppSecret, "0001");
+        const kospiData = await this.kisClient.getIndexPrice("0001");
         macroData.kospi = kospiData.price;
         macroData.kospiChangeRate = kospiData.changeRate;
       } catch (error) {
         console.log("ℹ️  KOSPI 지수 조회 실패:", error);
       }
 
-      // 2. KOSDAQ 지수 조회 (1001 - 코스닥)
+      // 2. KOSDAQ 지수 조회 (1001 - 코스닥, 토큰 재사용)
       try {
-        const kosdaqData = await getIndexPrice(kisAppKey, kisAppSecret, "1001");
+        const kosdaqData = await this.kisClient.getIndexPrice("1001");
         macroData.kosdaq = kosdaqData.price;
         macroData.kosdaqChangeRate = kosdaqData.changeRate;
       } catch (error) {
@@ -359,16 +362,13 @@ export class SmartDataCollector {
     };
 
     try {
-      const kisAppKey = Deno.env.get("KIS_APP_KEY");
-      const kisAppSecret = Deno.env.get("KIS_APP_SECRET");
-
-      if (!kisAppKey || !kisAppSecret) {
+      if (!this.kisClient) {
         console.log(`ℹ️  리스크 데이터 수집: ${stockCode} - KIS API 키 설정 필요`);
         return riskData;
       }
 
-      // 1. 과거 100일 일봉 데이터 조회
-      const dailyChart = await getDailyChart(kisAppKey, kisAppSecret, stockCode, 100);
+      // 1. 과거 100일 일봉 데이터 조회 (토큰 재사용)
+      const dailyChart = await this.kisClient.getDailyChart(stockCode, 100);
 
       if (dailyChart.length < 20) {
         console.log(`ℹ️  리스크 데이터: ${stockCode} - 충분한 데이터 없음 (${dailyChart.length}일)`);
@@ -403,9 +403,9 @@ export class SmartDataCollector {
       }
       riskData.maxDrawdown = maxDrawdown;
 
-      // 4. 베타 계산 (KOSPI 대비)
+      // 4. 베타 계산 (KOSPI 대비, 토큰 재사용)
       try {
-        const kospiChart = await getDailyChart(kisAppKey, kisAppSecret, "0001", 100);
+        const kospiChart = await this.kisClient.getDailyChart("0001", 100);
 
         if (kospiChart.length >= dailyChart.length) {
           const kospiPrices = kospiChart.slice(0, dailyChart.length).map(item => item.close);
