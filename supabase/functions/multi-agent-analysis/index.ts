@@ -4,6 +4,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2?target=deno";
 import { SmartDataCollector } from "../_shared/services/smart-data-collector.ts";
+import { KISApiClient } from "../_shared/utils/kis-api.ts";
 import { runFundamentalAgent } from "../_shared/agents/fundamental.agent.ts";
 import { runTechnicalAgent } from "../_shared/agents/technical.agent.ts";
 import { runNewsAgent } from "../_shared/agents/news.agent.ts";
@@ -35,6 +36,19 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
+    // KIS API 클라이언트 생성 (한 번만 생성하여 모든 종목에서 재사용)
+    const kisAppKey = Deno.env.get("KIS_APP_KEY");
+    const kisAppSecret = Deno.env.get("KIS_APP_SECRET");
+    const kisClient = kisAppKey && kisAppSecret
+      ? new KISApiClient(kisAppKey, kisAppSecret)
+      : null;
+
+    if (kisClient) {
+      console.log("✅ KIS API 클라이언트 초기화 (토큰 재사용 모드)");
+    } else {
+      console.log("⚠️  KIS API 키 미설정 (기술적 분석 제한됨)");
+    }
+
     // 활성화된 종목 조회
     const { data: stocks, error: stocksError } = await supabase
       .from("stocks")
@@ -58,8 +72,8 @@ serve(async (req) => {
       try {
         console.log(`\n📊 ${stock.name} (${stock.code}) 분석 시작...`);
 
-        // 1. 스마트 데이터 수집기 생성
-        const dataCollector = new SmartDataCollector(supabase);
+        // 1. 스마트 데이터 수집기 생성 (KIS API 클라이언트 재사용)
+        const dataCollector = new SmartDataCollector(supabase, kisClient);
 
         // 2. 5개 Agent 병렬 실행 (각 Agent가 내부에서 데이터 수집)
         const [fundamental, technical, news, macro, risk] = await Promise.all([

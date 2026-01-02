@@ -86,15 +86,22 @@ export class SmartDataCollector {
   private cacheUsage: Set<string> = new Set(); // 캐시 사용 추적
   private kisClient: KISApiClient | null = null; // KIS API 클라이언트 (토큰 재사용)
 
-  constructor(supabase: ReturnType<typeof createClient<any, "public">>) {
+  constructor(
+    supabase: ReturnType<typeof createClient<any, "public">>,
+    kisClient?: KISApiClient | null
+  ) {
     this.supabase = supabase;
 
-    // KIS API 클라이언트 초기화 (환경 변수가 있을 경우)
-    const kisAppKey = Deno.env.get("KIS_APP_KEY");
-    const kisAppSecret = Deno.env.get("KIS_APP_SECRET");
+    // KIS API 클라이언트 주입 (있으면 재사용, 없으면 새로 생성)
+    if (kisClient) {
+      this.kisClient = kisClient;
+    } else {
+      const kisAppKey = Deno.env.get("KIS_APP_KEY");
+      const kisAppSecret = Deno.env.get("KIS_APP_SECRET");
 
-    if (kisAppKey && kisAppSecret) {
-      this.kisClient = new KISApiClient(kisAppKey, kisAppSecret);
+      if (kisAppKey && kisAppSecret) {
+        this.kisClient = new KISApiClient(kisAppKey, kisAppSecret);
+      }
     }
   }
 
