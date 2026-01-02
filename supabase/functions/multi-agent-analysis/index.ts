@@ -139,7 +139,7 @@ serve(async (req) => {
           analysis_type: "full",
           synthesis_model: finalOpinion.synthesisModel,
           used_cache: dataCollector.hasUsedCache(),
-          current_price: technical.analysis.price,
+          current_price: technical.analysis.price > 0 ? technical.analysis.price : null,
         });
 
         if (insertError) {
