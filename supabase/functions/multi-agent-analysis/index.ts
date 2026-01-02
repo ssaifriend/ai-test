@@ -79,7 +79,7 @@ serve(async (req) => {
         };
 
         // 3. Debate Agent 실행
-        const debateResult = await runDebateAgent(agentOpinions, stock.name);
+        const debateResult = await runDebateAgent(agentOpinions, stock.id);
 
         // 4. Consensus 계산
         const consensus = calculateConsensus(agentOpinions);
